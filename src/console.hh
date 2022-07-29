@@ -42,7 +42,7 @@ namespace console {
         char lastKey = 0;
     };
 
-    extern const char * _COLORS[];
+    extern const char * _colors[];
 
     extern HANDLE _hOut;
     extern HANDLE _hIn;

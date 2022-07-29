@@ -34,7 +34,7 @@
 
 console::Pixel::Pixel(console::COLORS _col) : color(static_cast<int>(_col)) {}
 
-const char * console::_COLORS[] = {
+const char * console::_colors[] = {
     BLACK,
     RED,
     GREEN,
@@ -177,6 +177,8 @@ void console::UpdateInputs() {
 }
 
 void console::Draw() {
+    std::ios_base::sync_with_stdio(false);
+
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
 
@@ -187,7 +189,7 @@ void console::Draw() {
     std::string title;
 
     while(true) {
-        if(_failed_exit.load())
+        if(_failed_exit)
             return;
 
         t1 = std::chrono::high_resolution_clock::now();
@@ -208,12 +210,10 @@ void console::Draw() {
             t2 = t1;
         }
 
-        std::cout << BUFFER_POSITION << _buffer;
-
         if(title.size() != _consoleX)
             title.resize(_consoleX, ' ');
 
-        std::cout << TITLE_SETTINGS << title;
+        std::cout << BUFFER_POSITION + _buffer + TITLE_SETTINGS + title;
     }
 }
 
@@ -248,6 +248,8 @@ void console::Run() {
     if(!_init(pixels, _consoleX, _consoleY))
         return;
 
+    for(auto & p : pixels) _buffer += _colors[p.color];
+
     std::thread renderer(Draw);
     renderer.detach();
 
@@ -258,7 +260,7 @@ void console::Run() {
     float dTime;
 
     while(true) {
-        if(_failed_exit.load())
+        if(_failed_exit)
             break;
 
         t1 = std::chrono::high_resolution_clock::now();
@@ -270,13 +272,14 @@ void console::Run() {
         if(_consoleX * _consoleY != pixels.size())
             pixels.resize(_consoleX * _consoleY);
 
-        if(!_update(pixels, _consoleX.load(), _consoleY.load(), dTime, { _mouseX.load(), _mouseY.load(), _current_key.load() }))
+        if(!_update(pixels, _consoleX, _consoleY, dTime, { _mouseX, _mouseY, _current_key }))
             break;
 
-        const std::lock_guard<std::mutex> lck(_mut);
+        _mut.lock();
         _buffer.clear();
         for(auto & p : pixels)
-            _buffer += _COLORS[p.color];
+            _buffer += _colors[p.color];
+        _mut.unlock();
     }
 }
 
