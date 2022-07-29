@@ -23,6 +23,17 @@
 #define BRIGHT_CYAN     CSI "96;106m "
 #define BRIGHT_WHITE    CSI "97;107m "
 
+#define ALTERNATE_BUFFER CSI "?1049h"
+#define MAIN_BUFFER      CSI "?1049l"
+
+#define HIDE_CURSOR     CSI "?25l"
+#define BUFFER_POSITION CSI "2;1f"
+#define TITLE_SETTINGS  CSI "1;1f" CSI "30;47m"
+#define SHOW_CURSOR     CSI "?25h"
+#define SOFT_RESET      CSI "!p"
+
+console::Pixel::Pixel(console::COLORS _col) : color(static_cast<int>(_col)) {}
+
 const char * console::_COLORS[] = {
     BLACK,
     RED,
@@ -42,16 +53,35 @@ const char * console::_COLORS[] = {
     BRIGHT_WHITE,
 };
 
-#define ALTERNATE_BUFFER CSI "?1049h"
-#define MAIN_BUFFER      CSI "?1049l"
-
-console::Pixel::Pixel(console::COLORS _col) : color(static_cast<int>(_col)) {}
-
 HANDLE console::_hOut;
 HANDLE console::_hIn;
 
 DWORD console::_oldhOut;
 DWORD console::_oldhIn;
+
+std::atomic_bool console::_failed_exit = false;
+
+std::atomic_size_t console::_consoleX = 0;
+std::atomic_size_t console::_consoleY = 0;
+
+std::atomic_size_t console::_mouseX = 0;
+std::atomic_size_t console::_mouseY = 0;
+
+std::atomic_char console::_current_key = 0;
+
+std::mutex console::_mut = {};
+std::string console::_buffer = {};
+
+
+std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float, console::Event)>
+console::_update = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float, console::Event) -> bool {
+    return true;
+};
+
+std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t)>
+console::_init = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool {
+    return true;
+};
 
 int console::Init() {
     _hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -76,6 +106,7 @@ int console::Init() {
         return 1;
 
     _oldhIn = dwMode;
+
     dwMode = ENABLE_EXTENDED_FLAGS;
     dwMode |= ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
     dwMode &= ~(ENABLE_PROCESSED_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT);
@@ -83,21 +114,10 @@ int console::Init() {
     if(!SetConsoleMode(_hIn, dwMode))
         return 1;
 
-    std::cout << ALTERNATE_BUFFER;
-
-    // Hide the cursor
-    std::cout << CSI "?25l";
+    std::cout << ALTERNATE_BUFFER HIDE_CURSOR;
 
     return 0;
 }
-
-std::atomic_bool console::_failed_exit = false;
-
-std::atomic_size_t console::_consoleX = 0;
-std::atomic_size_t console::_consoleY = 0;
-
-std::mutex console::_mut = {};
-std::string console::_buffer = {};
 
 BOOL console::_ctrlhandler(DWORD ctrltype) {
     switch(ctrltype) {
@@ -105,36 +125,27 @@ BOOL console::_ctrlhandler(DWORD ctrltype) {
             _failed_exit = true;
             return true;
         break;
-
         case CTRL_CLOSE_EVENT:
             _failed_exit = true;
             return true;
         break;
-
         case CTRL_BREAK_EVENT:
             _failed_exit = true;
             return true;
         break;
-
         case CTRL_LOGOFF_EVENT:
             _failed_exit = true;
             return true;
         break;
-
         case CTRL_SHUTDOWN_EVENT:
             _failed_exit = true;
             return true;
         break;
-
         default:
             _failed_exit = true;
             return true;
     }
 }
-
-std::atomic_size_t console::_mouseX;
-std::atomic_size_t console::_mouseY;
-std::atomic_char console::_current_key;
 
 void console::UpdateInputs() {
     INPUT_RECORD buf[32];
@@ -162,7 +173,6 @@ void console::UpdateInputs() {
                 break;
             }
 
-        // technically 1000hz rate?
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
@@ -170,7 +180,10 @@ void console::UpdateInputs() {
 void console::Draw() {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = t1;
+
     std::chrono::duration<float> fps;
+    float dFps;
+
     int counter = 0;
     std::string title;
 
@@ -180,10 +193,12 @@ void console::Draw() {
 
         t1 = std::chrono::high_resolution_clock::now();
         fps = t1 - t2;
+
+        dFps = fps.count();
         counter++;
 
-        if(fps.count() >= 1.0 / 30.0) {
-            title = "V - FPS " + std::to_string((1.0F / fps.count()) * static_cast<float>(counter)) +
+        if(dFps >= 1.0F / 30.0F) {
+            title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
                     " - X: " + std::to_string(_consoleX) +
                     " Y: " + std::to_string(_consoleY) +
                     + " - KEY: " + std::to_string(_current_key) +
@@ -194,21 +209,23 @@ void console::Draw() {
             t2 = t1;
         }
 
-        std::cout << CSI "2;1f" << _buffer;
-        title.resize(_consoleX, ' ');
-        std::cout << CSI "1;1f" CSI "30;47m" << title;
+        std::cout << BUFFER_POSITION << _buffer;
+
+        if(title.size() != _consoleX)
+            title.resize(_consoleX, ' ');
+
+        std::cout << TITLE_SETTINGS << title;
     }
 }
 
-std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, double, console::Event)>
-console::_update = [](std::vector<console::Pixel> &, std::size_t, std::size_t, double, console::Event) -> bool {
-    return true;
-};
+void console::SetUpdateFunc(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t, double, console::Event)> f) {
+    _update = f;
+}
 
-std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t)>
-console::_init = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool {
-    return true;
-};
+void console::SetInitFunc(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t)> f) {
+    _init = f;
+}
+
 void console::Run() {
     if(!SetConsoleCtrlHandler(console::_ctrlhandler, TRUE))
         return;
@@ -220,14 +237,15 @@ void console::Run() {
 
     std::vector<Pixel> pixels = {};
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(384));
-
     std::thread input_controller(UpdateInputs);
     input_controller.detach();
 
-    std::cout << "Loading...";
+    std::cout << TITLE_SETTINGS "Loading...";
+
     std::this_thread::sleep_for(std::chrono::milliseconds(512));
+
     pixels.resize(_consoleX * _consoleY);
+
     if(!_init(pixels, _consoleX, _consoleY))
         return;
 
@@ -236,8 +254,9 @@ void console::Run() {
 
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> time;
-    double dTime;
+
+    std::chrono::duration<float> time;
+    float dTime;
 
     while(true) {
         if(_failed_exit.load())
@@ -263,13 +282,7 @@ void console::Run() {
 }
 
 int console::Exit() {
-    // Soft Reset the Console
-    std::cout << CSI "!p";
-
-    // Show the cursor
-    std::cout << CSI "?25h";
-
-    std::cout << MAIN_BUFFER;
+    std::cout << SOFT_RESET SHOW_CURSOR MAIN_BUFFER;
 
     if(!SetConsoleMode(_hOut, _oldhOut))
         return 1;

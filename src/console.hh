@@ -11,8 +11,6 @@
 #include <windows.h>
 
 namespace console {
-    extern const char * _COLORS[];
-
     enum class COLORS {
         BLACK   = 0,
         RED     = 1,
@@ -44,10 +42,11 @@ namespace console {
         char lastKey = 0;
     };
 
-    int Init();
+    extern const char * _COLORS[];
 
     extern HANDLE _hOut;
     extern HANDLE _hIn;
+
     extern DWORD _oldhOut;
     extern DWORD _oldhIn;
 
@@ -55,27 +54,28 @@ namespace console {
 
     extern std::atomic_size_t _consoleX;
     extern std::atomic_size_t _consoleY;
+
+    extern std::atomic_size_t _mouseX;
+    extern std::atomic_size_t _mouseY;
+
     extern std::atomic_char _current_key;
 
     extern std::mutex _mut;
     extern std::string _buffer;
 
-    BOOL _ctrlhandler(DWORD ctrltype);
+    extern std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t, float, Event)> _update;
+    extern std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t)> _init;
 
-    extern std::atomic_size_t _mouseX;
-    extern std::atomic_size_t _mouseY;
+    int Init();
+
+    BOOL _ctrlhandler(DWORD ctrltype);
 
     void UpdateInputs();
 
     void Draw();
 
-    extern std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t, double, Event)> _update;
-    extern std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t)> _init;
-
-    template<typename Func>
-    void SetUpdateFunc(Func f) { _update = f; }
-    template<typename Func>
-    void SetInitFunc(Func f) { _init = f; }
+    void SetUpdateFunc(std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t, double, Event)> f);
+    void SetInitFunc(std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t)> f);
 
     void Run();
 
