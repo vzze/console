@@ -72,7 +72,6 @@ std::atomic_char console::_current_key = 0;
 std::mutex console::_mut = {};
 std::string console::_buffer = {};
 
-
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float, console::Event)>
 console::_update = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float, console::Event) -> bool {
     return true;
@@ -274,7 +273,7 @@ void console::Run() {
         if(!_update(pixels, _consoleX.load(), _consoleY.load(), dTime, { _mouseX.load(), _mouseY.load(), _current_key.load() }))
             break;
 
-        std::lock_guard<std::mutex> lck(_mut);
+        const std::lock_guard<std::mutex> lck(_mut);
         _buffer.clear();
         for(auto & p : pixels)
             _buffer += _COLORS[p.color];
