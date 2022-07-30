@@ -256,8 +256,7 @@ void console::Run() {
     if(!_init(pixels, _consoleX, _consoleY))
         return;
 
-    for(auto & p : pixels)
-        _buffer.push_back(p);
+    _buffer = pixels;
 
     std::thread renderer(Draw);
     renderer.detach();
