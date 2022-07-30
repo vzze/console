@@ -214,11 +214,12 @@ void console::Draw() {
         if(title.size() != _consoleX)
             title.resize(_consoleX, ' ');
 
-        _mut.lock();
-        buffer.clear();
-        for(auto & p : _buffer)
-            buffer += _colors[p.color];
-        _mut.unlock();
+        if(_mut.try_lock()) {
+            buffer.clear();
+            for(auto & p : _buffer)
+                buffer += _colors[p.color];
+            _mut.unlock();
+        }
 
         std::cout << BUFFER_POSITION << buffer << TITLE_SETTINGS << title;
     }
@@ -283,9 +284,10 @@ void console::Run() {
         if(!_update(pixels, _consoleX, _consoleY, dTime, { _mouseX, _mouseY, _current_key }))
             break;
 
-        _mut.lock();
-        _buffer = pixels;
-        _mut.unlock();
+        if(_mut.try_lock()) {
+            _buffer = pixels;
+            _mut.unlock();
+        }
     }
 }
 
