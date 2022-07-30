@@ -70,7 +70,7 @@ namespace console {
 
     BOOL _ctrlhandler(DWORD ctrltype);
 
-    void UpdateInputs();
+    void _updateinputs();
 
     void Draw();
 

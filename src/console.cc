@@ -145,7 +145,7 @@ BOOL console::_ctrlhandler(DWORD ctrltype) {
     }
 }
 
-void console::UpdateInputs() {
+void console::_updateinputs() {
     INPUT_RECORD buf[32];
     DWORD read;
 
@@ -244,12 +244,11 @@ void console::Run() {
 
     std::vector<Pixel> pixels = {};
 
-    std::thread input_controller(UpdateInputs);
+    std::thread input_controller(_updateinputs);
     input_controller.detach();
 
     std::cout << TITLE_SETTINGS "Loading...";
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(512));
+    std::this_thread::sleep_for(std::chrono::milliseconds(128));
 
     pixels.resize(_consoleX * _consoleY);
 
