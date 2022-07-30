@@ -108,7 +108,6 @@ int console::Init() {
 
     dwMode = ENABLE_EXTENDED_FLAGS;
     dwMode |= ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
-    dwMode &= ~(ENABLE_PROCESSED_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT);
 
     if(!SetConsoleMode(_hIn, dwMode))
         return 1;
