@@ -61,7 +61,7 @@ namespace console {
     extern std::atomic_char _current_key;
 
     extern std::mutex _mut;
-    extern std::string _buffer;
+    extern std::vector<Pixel> _buffer;
 
     extern std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t, float, Event)> _update;
     extern std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t)> _init;

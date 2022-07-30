@@ -10,8 +10,3 @@ Small 2D Graphics Engine that runs as a CLI, goal was to keep it small and pack 
 * Rendering is separated from the main thread
 * Small source
 * CTRL + PAUSE will cause the application to gracefully exit
-
-#### Known Issues
-```
-Due to the rendering thread being separated, screen tearing may occur.
-```

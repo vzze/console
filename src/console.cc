@@ -70,7 +70,7 @@ std::atomic_size_t console::_mouseY = 0;
 std::atomic_char console::_current_key = 0;
 
 std::mutex console::_mut = {};
-std::string console::_buffer = {};
+std::vector<console::Pixel> console::_buffer = {};
 
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float, console::Event)>
 console::_update = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float, console::Event) -> bool {
@@ -186,7 +186,9 @@ void console::Draw() {
     float dFps;
 
     int counter = 0;
+
     std::string title;
+    std::string buffer;
 
     while(true) {
         if(_failed_exit)
@@ -213,7 +215,13 @@ void console::Draw() {
         if(title.size() != _consoleX)
             title.resize(_consoleX, ' ');
 
-        std::cout << BUFFER_POSITION + _buffer + TITLE_SETTINGS + title;
+        _mut.lock();
+        buffer.clear();
+        for(auto & p : _buffer)
+            buffer += _colors[p.color];
+        _mut.unlock();
+
+        std::cout << BUFFER_POSITION << buffer << TITLE_SETTINGS << title;
     }
 }
 
@@ -248,7 +256,8 @@ void console::Run() {
     if(!_init(pixels, _consoleX, _consoleY))
         return;
 
-    for(auto & p : pixels) _buffer += _colors[p.color];
+    for(auto & p : pixels)
+        _buffer.push_back(p);
 
     std::thread renderer(Draw);
     renderer.detach();
@@ -269,16 +278,15 @@ void console::Run() {
         t2 = t1;
         dTime = time.count();
 
-        if(_consoleX * _consoleY != pixels.size())
+        if(_consoleX * _consoleY != pixels.size()) {
             pixels.resize(_consoleX * _consoleY);
+        }
 
         if(!_update(pixels, _consoleX, _consoleY, dTime, { _mouseX, _mouseY, _current_key }))
             break;
 
         _mut.lock();
-        _buffer.clear();
-        for(auto & p : pixels)
-            _buffer += _colors[p.color];
+        _buffer = pixels;
         _mut.unlock();
     }
 }
