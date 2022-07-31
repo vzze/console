@@ -36,12 +36,6 @@ namespace console {
         Pixel(COLORS _col = COLORS::BLACK);
     };
 
-    struct Event {
-        std::size_t mouseX = 0;
-        std::size_t mouseY = 0;
-        char lastKey = 0;
-    };
-
     extern const char * _colors[];
 
     extern HANDLE _hOut;
@@ -63,8 +57,11 @@ namespace console {
     extern std::mutex _mut;
     extern std::vector<Pixel> _buffer;
 
-    extern std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t, float, Event)> _update;
-    extern std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t)> _init;
+    extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, float)> _update;
+    extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> _init;
+    extern std::function<void(char)> _keycallback;
+    extern bool _mpressedbuttons[5];
+    extern std::function<void(const bool *, std::size_t, std::size_t)> _mousebuttons;
 
     int Init();
 
@@ -74,8 +71,13 @@ namespace console {
 
     void Draw();
 
-    void SetUpdateFunc(std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t, double, Event)> f);
-    void SetInitFunc(std::function<bool(std::vector<Pixel>&,std::size_t,std::size_t)> f);
+    void SetMouseCallbackFunc(std::function<void(const bool *, std::size_t, std::size_t)> f);
+
+    void SetKeyCallbackFunc(std::function<void(char)> f);
+
+    void SetUpdateFunc(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, double)> f);
+
+    void SetInitFunc(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> f);
 
     void Run();
 

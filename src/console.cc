@@ -72,15 +72,20 @@ std::atomic_char console::_current_key = 0;
 std::mutex console::_mut = {};
 std::vector<console::Pixel> console::_buffer = {};
 
-std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float, console::Event)>
-console::_update = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float, console::Event) -> bool {
+std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float)>
+console::_update = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float) -> bool {
     return true;
 };
 
-std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t)>
+std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t)>
 console::_init = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool {
     return true;
 };
+
+std::function<void(char)> console::_keycallback = [](char) -> void {};
+
+bool console::_mpressedbuttons[5] = { false };
+std::function<void(const bool *, std::size_t, std::size_t)> console::_mousebuttons = [](const bool *, std::size_t, std::size_t) -> void {};
 
 int console::Init() {
     _hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -149,6 +154,8 @@ void console::_updateinputs() {
     INPUT_RECORD buf[32];
     DWORD read;
 
+    int mb = 0;
+
     while(true) {
         if(_failed_exit)
             return;
@@ -158,12 +165,23 @@ void console::_updateinputs() {
         for(DWORD i = 0; i < read; ++i)
             switch(buf[i].EventType) {
                 case KEY_EVENT:
-                    if(buf[i].Event.KeyEvent.bKeyDown)
+                    if(buf[i].Event.KeyEvent.bKeyDown) {
                         _current_key = buf[i].Event.KeyEvent.uChar.AsciiChar;
+                        _keycallback(buf[i].Event.KeyEvent.uChar.AsciiChar);
+                    }
                 break;
                 case MOUSE_EVENT:
-                    _mouseX = buf[i].Event.MouseEvent.dwMousePosition.X;
-                    _mouseY = buf[i].Event.MouseEvent.dwMousePosition.Y;
+                    switch(buf[i].Event.MouseEvent.dwEventFlags) {
+                        case MOUSE_MOVED:
+                            _mouseX = buf[i].Event.MouseEvent.dwMousePosition.X;
+                            _mouseY = buf[i].Event.MouseEvent.dwMousePosition.Y;
+                        break;
+                        case 0:
+                            for(mb = 0; mb < 5; ++mb)
+                                _mpressedbuttons[mb] = (buf[i].Event.MouseEvent.dwButtonState & (1 << mb)) > 0;
+                            _mousebuttons(_mpressedbuttons, _mouseX, _mouseY);
+                        break;
+                    }
                 break;
                 case WINDOW_BUFFER_SIZE_EVENT:
                     _consoleX = buf[i].Event.WindowBufferSizeEvent.dwSize.X;
@@ -225,7 +243,15 @@ void console::Draw() {
     }
 }
 
-void console::SetUpdateFunc(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t, double, console::Event)> f) {
+void console::SetMouseCallbackFunc(std::function<void(const bool *, std::size_t, std::size_t)> f) {
+    _mousebuttons = f;
+}
+
+void console::SetKeyCallbackFunc(std::function<void(char)> f) {
+    _keycallback = f;
+}
+
+void console::SetUpdateFunc(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t, double)> f) {
     _update = f;
 }
 
@@ -280,7 +306,7 @@ void console::Run() {
             pixels.resize(_consoleX * _consoleY);
         }
 
-        if(!_update(pixels, _consoleX, _consoleY, dTime, { _mouseX, _mouseY, _current_key }))
+        if(!_update(pixels, _consoleX, _consoleY, dTime))
             break;
 
         if(_mut.try_lock()) {

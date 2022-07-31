@@ -162,7 +162,7 @@ bool Init(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y) {
     return true;
 }
 
-bool Update(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y, float deltaTime, console::Event ev) {
+bool Update(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y, float deltaTime) {
 
     accumulator += deltaTime;
 
