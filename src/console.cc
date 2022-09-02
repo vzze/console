@@ -193,7 +193,7 @@ void console::_updateinputs() {
     }
 }
 
-void console::Draw() {
+void console::_draw() {
     std::ios_base::sync_with_stdio(false);
 
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -283,7 +283,7 @@ void console::Run() {
 
     _buffer = pixels;
 
-    std::thread renderer(Draw);
+    std::thread renderer(_draw);
     renderer.detach();
 
     auto t1 = std::chrono::high_resolution_clock::now();

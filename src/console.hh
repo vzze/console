@@ -69,7 +69,7 @@ namespace console {
 
     void _updateinputs();
 
-    void Draw();
+    void _draw();
 
     void SetMouseCallbackFunc(std::function<void(const bool *, std::size_t, std::size_t)> f);
 
