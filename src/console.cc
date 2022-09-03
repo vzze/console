@@ -175,6 +175,7 @@ void console::_updateinputs() {
                         case MOUSE_MOVED:
                             _mouseX = buf[i].Event.MouseEvent.dwMousePosition.X;
                             _mouseY = buf[i].Event.MouseEvent.dwMousePosition.Y;
+                            _mousebuttons(_mpressedbuttons, _mouseX, _mouseY);
                         break;
                         case 0:
                             for(mb = 0; mb < 5; ++mb)

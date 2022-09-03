@@ -4,7 +4,7 @@ void KeyCallback(char key) {
     // Do something with the pressed key
 }
 
-// only gets called when a mouse button is pressed
+// gets called if either mouse moves or mouse button gets pressed
 void MouseButtonCallback(const bool mouse_buttons[5], std::size_t mouseX, std::size_t mouseY) {
     // MouseButton1 = mouse_buttons[0]
     // ...
