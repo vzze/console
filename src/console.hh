@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <mutex>
 #include <functional>
 #include <chrono>
 
@@ -54,8 +55,13 @@ namespace console {
 
     extern std::atomic_char _current_key;
 
-    extern std::mutex _mut;
-    extern std::vector<Pixel> _buffer;
+    struct _buffer {
+        std::vector<Pixel> next, current;
+        mutable std::mutex mut_read;
+        std::mutex mut_write;
+    };
+
+    extern _buffer _pbuf;
 
     extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, float)> _update;
     extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> _init;
