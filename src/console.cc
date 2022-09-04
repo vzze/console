@@ -66,9 +66,9 @@ std::atomic_size_t console::_consoleY = 0;
 #ifdef _WIN32
 std::atomic_size_t console::_mouseX = 0;
 std::atomic_size_t console::_mouseY = 0;
-#endif
-std::atomic_char console::_current_key = 0;
 
+std::atomic_char console::_current_key = 0;
+#endif
 console::_buffer console::_pbuf;
 
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float)>

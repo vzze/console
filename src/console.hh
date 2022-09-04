@@ -56,9 +56,9 @@ namespace console {
 #ifdef _WIN32
     extern std::atomic_size_t _mouseX;
     extern std::atomic_size_t _mouseY;
-#endif
-    extern std::atomic_char _current_key;
 
+    extern std::atomic_char _current_key;
+#endif
     struct _buffer {
         std::vector<Pixel> next, current;
         mutable std::mutex mut_read;
