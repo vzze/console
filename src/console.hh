@@ -9,7 +9,11 @@
 #include <functional>
 #include <chrono>
 
+#ifdef _WIN32
 #include <windows.h>
+#elif defined(__unix__)
+#include <sys/ioctl.h>
+#endif
 
 namespace console {
     enum class COLORS {
@@ -38,21 +42,21 @@ namespace console {
     };
 
     extern const char * _colors[];
-
+#ifdef _WIN32
     extern HANDLE _hOut;
     extern HANDLE _hIn;
 
     extern DWORD _oldhOut;
     extern DWORD _oldhIn;
-
+#endif
     extern std::atomic_bool _failed_exit;
 
     extern std::atomic_size_t _consoleX;
     extern std::atomic_size_t _consoleY;
-
+#ifdef _WIN32
     extern std::atomic_size_t _mouseX;
     extern std::atomic_size_t _mouseY;
-
+#endif
     extern std::atomic_char _current_key;
 
     struct _buffer {
@@ -65,22 +69,23 @@ namespace console {
 
     extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, float)> _update;
     extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> _init;
+#ifdef _WIN32
     extern std::function<void(char)> _keycallback;
     extern bool _mpressedbuttons[5];
     extern std::function<void(const bool *, std::size_t, std::size_t)> _mousebuttons;
-
+#endif
     int Init();
-
+#ifdef _WIN32
     BOOL _ctrlhandler(DWORD ctrltype);
-
+#endif
     void _updateinputs();
 
     void _draw();
-
+#ifdef _WIN32
     void SetMouseCallbackFunc(std::function<void(const bool *, std::size_t, std::size_t)> f);
 
     void SetKeyCallbackFunc(std::function<void(char)> f);
-
+#endif
     void SetUpdateFunc(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, double)> f);
 
     void SetInitFunc(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> f);

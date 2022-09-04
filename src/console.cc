@@ -52,21 +52,21 @@ const char * console::_colors[] = {
     BRIGHT_CYAN,
     BRIGHT_WHITE,
 };
-
+#ifdef _WIN32
 HANDLE console::_hOut;
 HANDLE console::_hIn;
 
 DWORD console::_oldhOut;
 DWORD console::_oldhIn;
-
+#endif
 std::atomic_bool console::_failed_exit = false;
 
 std::atomic_size_t console::_consoleX = 0;
 std::atomic_size_t console::_consoleY = 0;
-
+#ifdef _WIN32
 std::atomic_size_t console::_mouseX = 0;
 std::atomic_size_t console::_mouseY = 0;
-
+#endif
 std::atomic_char console::_current_key = 0;
 
 console::_buffer console::_pbuf;
@@ -80,13 +80,14 @@ std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t)>
 console::_init = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool {
     return true;
 };
-
+#ifdef _WIN32
 std::function<void(char)> console::_keycallback = [](char) -> void {};
 
 bool console::_mpressedbuttons[5] = { false };
 std::function<void(const bool *, std::size_t, std::size_t)> console::_mousebuttons = [](const bool *, std::size_t, std::size_t) -> void {};
-
+#endif
 int console::Init() {
+#ifdef _WIN32
     _hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
     if(_hOut == INVALID_HANDLE_VALUE)
@@ -115,12 +116,12 @@ int console::Init() {
 
     if(!SetConsoleMode(_hIn, dwMode))
         return 1;
-
+#endif
     std::cout << ALTERNATE_BUFFER HIDE_CURSOR;
 
     return 0;
 }
-
+#ifdef _WIN32
 BOOL console::_ctrlhandler(DWORD ctrltype) {
     switch(ctrltype) {
         case CTRL_C_EVENT:
@@ -148,17 +149,20 @@ BOOL console::_ctrlhandler(DWORD ctrltype) {
             return true;
     }
 }
-
+#endif
 void console::_updateinputs() {
+#ifdef _WIN32
     INPUT_RECORD buf[32];
     DWORD read;
 
     int mb = 0;
-
+#elif defined(__unix__)
+    struct winsize w;
+#endif
     while(true) {
         if(_failed_exit)
             return;
-
+#ifdef _WIN32
         ReadConsoleInput(_hIn, buf, 32, &read);
 
         for(DWORD i = 0; i < read; ++i)
@@ -188,7 +192,11 @@ void console::_updateinputs() {
                     _consoleY = buf[i].Event.WindowBufferSizeEvent.dwSize.Y - 1;
                 break;
             }
-
+#elif defined(__unix__)
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+        _consoleX = w.ws_col;
+        _consoleY = w.ws_row - 1;
+#endif
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
@@ -218,13 +226,18 @@ void console::_draw() {
         counter++;
 
         if(dFps >= 1.0F / 30.0F) {
+#ifdef _WIN32
             title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
                     " - X: " + std::to_string(_consoleX) +
                     " Y: " + std::to_string(_consoleY) +
                     + " - KEY: " + std::to_string(_current_key) +
                     " - MOUSE: X: " + std::to_string(_mouseX) +
                     + " Y: " + std::to_string(_mouseY);
-
+#elif defined(__unix__)
+            title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
+                    " - X: " + std::to_string(_consoleX) +
+                    " Y: " + std::to_string(_consoleY);
+#endif
             counter = 0;
             t2 = t1;
         }
@@ -243,7 +256,7 @@ void console::_draw() {
         std::cout << BUFFER_POSITION << buffer << TITLE_SETTINGS << title;
     }
 }
-
+#ifdef _WIN32
 void console::SetMouseCallbackFunc(std::function<void(const bool *, std::size_t, std::size_t)> f) {
     _mousebuttons = f;
 }
@@ -251,7 +264,7 @@ void console::SetMouseCallbackFunc(std::function<void(const bool *, std::size_t,
 void console::SetKeyCallbackFunc(std::function<void(char)> f) {
     _keycallback = f;
 }
-
+#endif
 void console::SetUpdateFunc(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t, double)> f) {
     _update = f;
 }
@@ -261,6 +274,7 @@ void console::SetInitFunc(std::function<bool(std::vector<console::Pixel>&,std::s
 }
 
 void console::Run() {
+#ifdef _WIN32
     if(!SetConsoleCtrlHandler(console::_ctrlhandler, TRUE))
         return;
 
@@ -268,7 +282,7 @@ void console::Run() {
 
     if(_hIn == INVALID_HANDLE_VALUE)
         _failed_exit = true;
-
+#endif
     std::vector<Pixel> pixels = {};
 
     std::thread input_controller(_updateinputs);
@@ -330,12 +344,12 @@ void console::Run() {
 
 int console::Exit() {
     std::cout << SOFT_RESET SHOW_CURSOR MAIN_BUFFER;
-
+#ifdef _WIN32
     if(!SetConsoleMode(_hOut, _oldhOut))
         return 1;
 
     if(!SetConsoleMode(_hIn, _oldhIn))
         return 1;
-
+#endif
     return 0;
 }
