@@ -207,8 +207,6 @@ void console::_draw() {
     std::string title;
     std::string buffer;
 
-    std::size_t local_consoleX, local_consoleY;
-
     while(true) {
         if(_failed_exit)
             return;
@@ -219,13 +217,10 @@ void console::_draw() {
         dFps = fps.count();
         counter++;
 
-        local_consoleX = _consoleX;
-        local_consoleY = _consoleY;
-
         if(dFps >= 1.0F / 30.0F) {
             title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
-                    " - X: " + std::to_string(local_consoleX) +
-                    " Y: " + std::to_string(local_consoleY) +
+                    " - X: " + std::to_string(_consoleX) +
+                    " Y: " + std::to_string(_consoleY) +
                     + " - KEY: " + std::to_string(_current_key) +
                     " - MOUSE: X: " + std::to_string(_mouseX) +
                     + " Y: " + std::to_string(_mouseY);
@@ -234,8 +229,8 @@ void console::_draw() {
             t2 = t1;
         }
 
-        if(title.size() != local_consoleX)
-            title.resize(local_consoleX, ' ');
+        if(title.size() != _consoleX)
+            title.resize(_consoleX, ' ');
 
         buffer.clear();
 
@@ -298,8 +293,6 @@ void console::Run() {
     std::chrono::duration<float> time;
     float dTime;
 
-    std::size_t local_consoleX, local_consoleY;
-
     while(true) {
         if(_failed_exit)
             break;
@@ -310,17 +303,15 @@ void console::Run() {
         t2 = t1;
         dTime = time.count();
 
-        local_consoleX = _consoleX;
-        local_consoleY = _consoleY;
+        if(_consoleX * _consoleY != pixels.size()) [[unlikely]] {
+            pixels.resize(_consoleX * _consoleY);
 
-        if(local_consoleX * local_consoleY != pixels.size()) [[unlikely]] {
-            pixels.resize(local_consoleX * local_consoleY);
-
-            std::scoped_lock lck(_pbuf.mut_write);
+            std::scoped_lock lck(_pbuf.mut_write, _pbuf.mut_read);
             _pbuf.next.resize(pixels.size());
+            _pbuf.current.resize(pixels.size());
         }
 
-        if(!_update(pixels, local_consoleX, local_consoleY, dTime))
+        if(!_update(pixels, _consoleX, _consoleY, dTime))
             break;
 
         {
