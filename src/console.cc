@@ -66,9 +66,9 @@ std::atomic_size_t console::_consoleY = 0;
 #ifdef _WIN32
 std::atomic_size_t console::_mouseX = 0;
 std::atomic_size_t console::_mouseY = 0;
-
-std::atomic_char console::_current_key = 0;
 #endif
+std::atomic_char console::_current_key = 0;
+
 console::_buffer console::_pbuf;
 
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float)>
@@ -80,9 +80,9 @@ std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t)>
 console::_init = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool {
     return true;
 };
-#ifdef _WIN32
-std::function<void(char)> console::_keycallback = [](char) -> void {};
 
+std::function<void(char)> console::_keycallback = [](char) -> void {};
+#ifdef _WIN32
 bool console::_mpressedbuttons[5] = { false };
 std::function<void(const bool *, std::size_t, std::size_t)> console::_mousebuttons = [](const bool *, std::size_t, std::size_t) -> void {};
 #endif
@@ -158,6 +158,21 @@ void console::_updateinputs() {
     int mb = 0;
 #elif defined(__unix__)
     struct winsize w;
+
+    struct termios oldsets, newsets;
+
+    int res;
+
+    char c;
+
+    fd_set set;
+    struct timeval tv;
+
+    tcgetattr(fileno(stdin), &oldsets);
+
+    newsets.c_lflag &= (~ICANON & ~ECHO);
+
+    tcsetattr(fileno(stdin), TCSANOW, &newsets);
 #endif
     while(true) {
         if(_failed_exit)
@@ -194,11 +209,28 @@ void console::_updateinputs() {
             }
 #elif defined(__unix__)
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
         _consoleX = w.ws_col;
         _consoleY = w.ws_row - 1;
+
+        tv.tv_sec  = 10;
+        tv.tv_usec = 0;
+
+        FD_ZERO(&set);
+        FD_SET(fileno(stdin), &set);
+
+        res = select(fileno(stdin) + 1, &set, NULL, NULL, &tv);
+
+        if(res > 0) {
+            read(fileno(stdin), &c, 1);
+            _current_key = c;
+        }
 #endif
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+#ifdef __unix__
+    tcsetattr(fileno(stdin), TCSANOW, &oldsets);
+#endif
 }
 
 void console::_draw() {
@@ -236,7 +268,8 @@ void console::_draw() {
 #elif defined(__unix__)
             title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
                     " - X: " + std::to_string(_consoleX) +
-                    " Y: " + std::to_string(_consoleY);
+                    " Y: " + std::to_string(_consoleY)
+                    + " - KEY: " + std::to_string(_current_key);
 #endif
             counter = 0;
             t2 = t1;
@@ -260,11 +293,11 @@ void console::_draw() {
 void console::SetMouseCallbackFunc(std::function<void(const bool *, std::size_t, std::size_t)> f) {
     _mousebuttons = f;
 }
-
+#endif
 void console::SetKeyCallbackFunc(std::function<void(char)> f) {
     _keycallback = f;
 }
-#endif
+
 void console::SetUpdateFunc(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t, double)> f) {
     _update = f;
 }
@@ -343,6 +376,7 @@ void console::Run() {
 }
 
 int console::Exit() {
+    _failed_exit = true;
     std::cout << SOFT_RESET SHOW_CURSOR MAIN_BUFFER;
 #ifdef _WIN32
     if(!SetConsoleMode(_hOut, _oldhOut))

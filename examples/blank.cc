@@ -3,13 +3,13 @@
 void KeyCallback(char key) {
     // Do something with the pressed key
 }
-
+#ifdef _WIN32
 // gets called if either mouse moves or mouse button gets pressed
 void MouseButtonCallback(const bool mouse_buttons[5], std::size_t mouseX, std::size_t mouseY) {
     // MouseButton1 = mouse_buttons[0]
     // ...
 }
-
+#endif
 // gets called before the main thread starts
 bool Init(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y) {
 
@@ -28,8 +28,9 @@ int main() {
     console::SetInitFunc(Init);
     console::SetUpdateFunc(Update);
     console::SetKeyCallbackFunc(KeyCallback);
+#ifdef _WIN32
     console::SetMouseCallbackFunc(MouseButtonCallback);
-
+#endif
     console::Run();
 
     console::Exit();

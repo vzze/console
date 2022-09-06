@@ -13,6 +13,7 @@
 #include <windows.h>
 #elif defined(__unix__)
 #include <sys/ioctl.h>
+#include <termios.h>
 #endif
 
 namespace console {
@@ -56,9 +57,9 @@ namespace console {
 #ifdef _WIN32
     extern std::atomic_size_t _mouseX;
     extern std::atomic_size_t _mouseY;
-
-    extern std::atomic_char _current_key;
 #endif
+    extern std::atomic_char _current_key;
+
     struct _buffer {
         std::vector<Pixel> next, current;
         mutable std::mutex mut_read;
@@ -69,8 +70,8 @@ namespace console {
 
     extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, float)> _update;
     extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> _init;
-#ifdef _WIN32
     extern std::function<void(char)> _keycallback;
+#ifdef _WIN32
     extern bool _mpressedbuttons[5];
     extern std::function<void(const bool *, std::size_t, std::size_t)> _mousebuttons;
 #endif
@@ -83,9 +84,9 @@ namespace console {
     void _draw();
 #ifdef _WIN32
     void SetMouseCallbackFunc(std::function<void(const bool *, std::size_t, std::size_t)> f);
-
-    void SetKeyCallbackFunc(std::function<void(char)> f);
 #endif
+    void SetKeyCallbackFunc(std::function<void(char)> f);
+
     void SetUpdateFunc(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, double)> f);
 
     void SetInitFunc(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> f);
