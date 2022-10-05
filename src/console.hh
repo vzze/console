@@ -115,6 +115,9 @@ namespace console {
 
     // collection of utility functions to interact with the pixel buffer
     namespace grid {
+        namespace _impl {
+            extern std::size_t _x, _y;
+        }
         // parameters: pixel buffer, x coord, y coord, number of columns (X);
         // throws if out of bounds;
         // returns Pixel reference;

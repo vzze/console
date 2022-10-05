@@ -9,50 +9,50 @@
 #define OSC "\x1b]"
 #define ST  "\x7"
 
-#define FG_BLACK    CSI "30m"
-#define FG_RED      CSI "31m"
-#define FG_GREEN    CSI "32m"
-#define FG_YELLOW   CSI "33m"
-#define FG_BLUE     CSI "34m"
-#define FG_MAGENTA  CSI "35m"
-#define FG_CYAN     CSI "36m"
-#define FG_WHITE    CSI "37m"
+#define FG_BLACK          CSI "30m"
+#define FG_RED            CSI "31m"
+#define FG_GREEN          CSI "32m"
+#define FG_YELLOW         CSI "33m"
+#define FG_BLUE           CSI "34m"
+#define FG_MAGENTA        CSI "35m"
+#define FG_CYAN           CSI "36m"
+#define FG_WHITE          CSI "37m"
 
-#define BG_BLACK    CSI "40m"
-#define BG_RED      CSI "41m"
-#define BG_GREEN    CSI "42m"
-#define BG_YELLOW   CSI "43m"
-#define BG_BLUE     CSI "44m"
-#define BG_MAGENTA  CSI "45m"
-#define BG_CYAN     CSI "46m"
-#define BG_WHITE    CSI "47m"
+#define BG_BLACK          CSI "40m"
+#define BG_RED            CSI "41m"
+#define BG_GREEN          CSI "42m"
+#define BG_YELLOW         CSI "43m"
+#define BG_BLUE           CSI "44m"
+#define BG_MAGENTA        CSI "45m"
+#define BG_CYAN           CSI "46m"
+#define BG_WHITE          CSI "47m"
 
-#define FG_BRIGHT_BLACK    CSI "90m"
-#define FG_BRIGHT_RED      CSI "91m"
-#define FG_BRIGHT_GREEN    CSI "92m"
-#define FG_BRIGHT_YELLOW   CSI "93m"
-#define FG_BRIGHT_BLUE     CSI "94m"
-#define FG_BRIGHT_MAGENTA  CSI "95m"
-#define FG_BRIGHT_CYAN     CSI "96m"
-#define FG_BRIGHT_WHITE    CSI "97m"
+#define FG_BRIGHT_BLACK   CSI "90m"
+#define FG_BRIGHT_RED     CSI "91m"
+#define FG_BRIGHT_GREEN   CSI "92m"
+#define FG_BRIGHT_YELLOW  CSI "93m"
+#define FG_BRIGHT_BLUE    CSI "94m"
+#define FG_BRIGHT_MAGENTA CSI "95m"
+#define FG_BRIGHT_CYAN    CSI "96m"
+#define FG_BRIGHT_WHITE   CSI "97m"
 
-#define BG_BRIGHT_BLACK    CSI "100m"
-#define BG_BRIGHT_RED      CSI "101m"
-#define BG_BRIGHT_GREEN    CSI "102m"
-#define BG_BRIGHT_YELLOW   CSI "103m"
-#define BG_BRIGHT_BLUE     CSI "104m"
-#define BG_BRIGHT_MAGENTA  CSI "105m"
-#define BG_BRIGHT_CYAN     CSI "106m"
-#define BG_BRIGHT_WHITE    CSI "107m"
+#define BG_BRIGHT_BLACK   CSI "100m"
+#define BG_BRIGHT_RED     CSI "101m"
+#define BG_BRIGHT_GREEN   CSI "102m"
+#define BG_BRIGHT_YELLOW  CSI "103m"
+#define BG_BRIGHT_BLUE    CSI "104m"
+#define BG_BRIGHT_MAGENTA CSI "105m"
+#define BG_BRIGHT_CYAN    CSI "106m"
+#define BG_BRIGHT_WHITE   CSI "107m"
 
-#define ALTERNATE_BUFFER CSI "?1049h"
-#define MAIN_BUFFER      CSI "?1049l"
+#define ALTERNATE_BUFFER  CSI "?1049h"
+#define MAIN_BUFFER       CSI "?1049l"
 
-#define HIDE_CURSOR     CSI "?25l"
-#define BUFFER_POSITION CSI "2;1f"
-#define TITLE_SETTINGS  CSI "1;1f" CSI "30;47m"
-#define SHOW_CURSOR     CSI "?25h"
-#define SOFT_RESET      CSI "!p"
+#define HIDE_CURSOR       CSI "?25l"
+#define BUFFER_POSITION   CSI "2;1f"
+#define TITLE_SETTINGS    CSI "1;1f" CSI "30;47m"
+#define SHOW_CURSOR       CSI "?25h"
+#define SOFT_RESET        CSI "!p"
 
 console::Pixel::Pixel(COLORS _fg, COLORS _bg, char _display) : fg(_fg), bg(_bg), display(_display) {}
 
@@ -158,7 +158,7 @@ BOOL console::_impl::_ctrlhandler(DWORD ctrltype) {
 void console::_impl::_updateinputs() {
 #ifdef _WIN32
     INPUT_RECORD buf[32];
-    DWORD read;
+    DWORD read, i;
 
     int mb = 0;
 #elif defined(__unix__)
@@ -183,9 +183,10 @@ void console::_impl::_updateinputs() {
         if(_failed_exit)
             return;
 #ifdef _WIN32
-        ReadConsoleInput(_hIn, buf, 32, &read);
+        GetNumberOfConsoleInputEvents(_hIn, &read);
+        ReadConsoleInput(_hIn, buf, read, &read);
 
-        for(DWORD i = 0; i < read; ++i)
+        for(i = 0; i < read; ++i)
             switch(buf[i].EventType) {
                 case KEY_EVENT:
                     if(buf[i].Event.KeyEvent.bKeyDown) {
@@ -454,68 +455,76 @@ void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str
 }
 
 void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str, COLORS fg, COLORS bg, std::size_t pos) {
+    static std::size_t i;
     if(str.size() > pixels.size() - pos)
-        for(std::size_t i = 0; i < pixels.size() - pos; ++i) {
+        for(i = 0; i < pixels.size() - pos; ++i) {
             pixels[pos + i].display = str[i];
             pixels[pos + i].bg = bg;
             pixels[pos + i].fg = fg;
         }
     else
-        for(std::size_t i = 0; i < str.size(); ++i) {
+        for(i = 0; i < str.size(); ++i) {
             pixels[pos + i].display = str[i];
             pixels[pos + i].bg = bg;
             pixels[pos + i].fg = fg;
         }
 }
 
-void console::grid::for_each_0(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
-    std::size_t x = 0, y = 0;
+std::size_t console::grid::_impl::_x{};
+std::size_t console::grid::_impl::_y{};
 
-    while(y != Y) {
-        while(x != X) {
-            func(pixels[y * X + x]);
-            ++x;
+void console::grid::for_each_0(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
+    _impl::_x = 0;
+    _impl::_y = 0;
+
+    while(_impl::_y != Y) {
+        while(_impl::_x != X) {
+            func(pixels[_impl::_y * X + _impl::_x]);
+            ++_impl::_x;
         }
-        ++y;
-        x = 0;
+        ++_impl::_y;
+        _impl::_x = 0;
     }
 }
 
 void console::grid::for_each_90(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
-    std::size_t x = X - 1, y = 0;
+    _impl::_x = X - 1;
+    _impl::_y = 0;
 
-    while(x >= 0) {
-        while(y != Y) {
-            func(pixels[y * X + x]);
-            ++y;
+    while(_impl::_x >= 0) {
+        while(_impl::_y != Y) {
+            func(pixels[_impl::_y * X + _impl::_x]);
+            ++_impl::_y;
         }
-        --x;
-        y = 0;
+        --_impl::_x;
+        _impl::_y = 0;
     }
 }
 
 void console::grid::for_each_180(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
-    std::size_t x = X - 1, y = Y - 1;
+    _impl::_x = X - 1;
+    _impl::_y = Y - 1;
 
-    while(y >= 0) {
-        while(x >= 0) {
-            func(pixels[y * X + x]);
-            --x;
+    while(_impl::_y >= 0) {
+        while(_impl::_x >= 0) {
+            func(pixels[_impl::_y * X + _impl::_x]);
+            --_impl::_x;
         }
-        --y;
-        x = X - 1;
+        --_impl::_y;
+        _impl::_x = X - 1;
     }
 }
 
 void console::grid::for_each_270(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
-    std::size_t x = 0, y = Y - 1;
+    _impl::_x = 0;
+    _impl::_y = Y - 1;
 
-    while(x != X) {
-        while(y >= 0) {
-            func(pixels[y * X + x]);
-            --y;
+    while(_impl::_x != X) {
+        while(_impl::_y >= 0) {
+            func(pixels[_impl::_y * X + _impl::_x]);
+            --_impl::_y;
         }
-        x++;
-        y = Y - 1;
+        _impl::_x++;
+        _impl::_y = Y - 1;
     }
 }
