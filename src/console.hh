@@ -79,7 +79,7 @@ namespace console {
 
         struct _buffer {
             std::vector<Pixel> next, current;
-            mutable std::mutex mut_read;
+            std::mutex mut_read;
             std::mutex mut_write;
         };
 
