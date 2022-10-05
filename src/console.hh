@@ -126,10 +126,14 @@ namespace console {
 
         // parameters: pixel buffer, string, x coord, y coord, number of columns (X);
         // throws if out of bounds;
+        // if string is larger than remaining space in vector its cut;
+        // using escape sequences like \n or \t WILL break the pixel buffer;
         void set_string(std::vector<Pixel> &, std::string_view, COLORS fg, COLORS bg, std::size_t, std::size_t, std::size_t);
 
         // parameters: pixel buffer, string, vector position;
         // throws if out of bounds;
+        // if string is larger than remaining space in vector its cut;
+        // using escape sequences like \n or \t WILL break the pixel buffer;
         void set_string(std::vector<Pixel> &, std::string_view, COLORS fg, COLORS bg, std::size_t);
 
         // parameters: pixel buffer, number of columns (X), number of lines (Y), function with side effect;

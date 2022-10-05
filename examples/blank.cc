@@ -16,7 +16,7 @@ bool Init(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y) {
         p.fg = console::COLORS::FG_BLACK;
         p.bg = console::COLORS::BG_BLACK;
     });
-    console::grid::set_string(pixels, "Hello World!", console::COLORS::FG_WHITE, console::COLORS::BG_BLACK, X - 1, 0, X);
+    console::grid::set_string(pixels, "Hello World! This is a test for the new string feature", console::COLORS::FG_WHITE, console::COLORS::BG_BLACK, 0, 0, X);
     return true;
 }
 
@@ -36,5 +36,5 @@ int main() {
     console::set_mouse_callback(MouseButtonCallback);
 #endif
     console::run();
-    console::exit();
+    return console::exit();
 }
