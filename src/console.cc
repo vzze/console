@@ -125,33 +125,18 @@ console::_impl::_init = [](std::vector<console::Pixel> &, std::size_t, std::size
 std::function<void(char)> console::_impl::_keycallback = [](char) -> void {};
 #ifdef _WIN32
 bool console::_impl::_mpressedbuttons[5] = { false };
-std::function<void(const bool *, std::size_t, std::size_t)> console::_impl::_mousebuttons = [](const bool *, std::size_t, std::size_t) -> void {};
+
+std::function<void(const bool *, std::size_t, std::size_t)>
+console::_impl::_mousebuttons = [](const bool *, std::size_t, std::size_t) -> void {};
 
 BOOL console::_impl::_ctrlhandler(DWORD ctrltype) {
     switch(ctrltype) {
-        case CTRL_C_EVENT:
-            _failed_exit = true;
-            return true;
-        break;
-        case CTRL_CLOSE_EVENT:
-            _failed_exit = true;
-            return true;
-        break;
-        case CTRL_BREAK_EVENT:
-            _failed_exit = true;
-            return true;
-        break;
-        case CTRL_LOGOFF_EVENT:
-            _failed_exit = true;
-            return true;
-        break;
-        case CTRL_SHUTDOWN_EVENT:
-            _failed_exit = true;
-            return true;
-        break;
-        default:
-            _failed_exit = true;
-            return true;
+        case CTRL_C_EVENT:        _failed_exit = true; return true; break;
+        case CTRL_CLOSE_EVENT:    _failed_exit = true; return true; break;
+        case CTRL_BREAK_EVENT:    _failed_exit = true; return true; break;
+        case CTRL_LOGOFF_EVENT:   _failed_exit = true; return true; break;
+        case CTRL_SHUTDOWN_EVENT: _failed_exit = true; return true; break;
+        default:                  _failed_exit = true; return true;
     }
 }
 #endif
@@ -269,16 +254,16 @@ void console::_impl::_draw() {
         if(dFps >= 1.0F / 30.0F) {
 #ifdef _WIN32
             title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
-                    " - X: " + std::to_string(_consoleX - 1) +
-                    " Y: " + std::to_string(_consoleY) +
-                    + " - KEY: " + std::to_string(_current_key) +
-                    " - MOUSE: X: " + std::to_string(_mouseX) +
-                    + " Y: " + std::to_string(_mouseY);
+            " - X: "           + std::to_string(_consoleX - 1)                               +
+            " Y: "             + std::to_string(_consoleY)                                   +
+            " - KEY: "         + std::to_string(_current_key)                                +
+            " - MOUSE: X: "    + std::to_string(_mouseX)                                     +
+            " Y: "             + std::to_string(_mouseY);
 #elif defined(__unix__)
             title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
-                    " - X: " + std::to_string(_consoleX - 1) +
-                    " Y: " + std::to_string(_consoleY)
-                    + " - KEY: " + std::to_string(_current_key);
+            " - X: "           + std::to_string(_consoleX - 1)                               +
+            " Y: "             + std::to_string(_consoleY)                                   +
+            " - KEY: "         + std::to_string(_current_key);
 #endif
             counter = 0;
             t2 = t1;
@@ -316,32 +301,27 @@ int console::init() {
 #ifdef _WIN32
     _impl::_hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    if(_impl::_hOut == INVALID_HANDLE_VALUE)
-        return 1;
+    if(_impl::_hOut == INVALID_HANDLE_VALUE) return 1;
 
     DWORD dwMode = 0;
 
-    if(!GetConsoleMode(_impl::_hOut, &dwMode))
-        return 1;
+    if(!GetConsoleMode(_impl::_hOut, &dwMode)) return 1;
 
     _impl::_oldhOut = dwMode;
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
 
-    if(!SetConsoleMode(_impl::_hOut, dwMode))
-        return 1;
+    if(!SetConsoleMode(_impl::_hOut, dwMode)) return 1;
 
     _impl::_hIn = GetStdHandle(STD_INPUT_HANDLE);
 
-    if(!GetConsoleMode(_impl::_hIn, &dwMode))
-        return 1;
+    if(!GetConsoleMode(_impl::_hIn, &dwMode)) return 1;
 
     _impl::_oldhIn = dwMode;
 
     dwMode = ENABLE_EXTENDED_FLAGS;
     dwMode |= ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
 
-    if(!SetConsoleMode(_impl::_hIn, dwMode))
-        return 1;
+    if(!SetConsoleMode(_impl::_hIn, dwMode)) return 1;
 #endif
     std::cout << ALTERNATE_BUFFER HIDE_CURSOR;
 
@@ -368,11 +348,6 @@ void console::run() {
 #ifdef _WIN32
     if(!SetConsoleCtrlHandler(console::_impl::_ctrlhandler, TRUE))
         return;
-
-    _impl::_hIn = GetStdHandle(STD_INPUT_HANDLE);
-
-    if(_impl::_hIn == INVALID_HANDLE_VALUE)
-        _impl::_failed_exit = true;
 #endif
     std::vector<Pixel> pixels = {};
 
