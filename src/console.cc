@@ -227,7 +227,7 @@ void console::_impl::_updateinputs() {
         res = select(fileno(stdin) + 1, &set, NULL, NULL, &tv);
 
         if(res > 0) {
-            read(fileno(stdin), &c, 1);
+            [[maybe_unused]] auto x = read(fileno(stdin), &c, 1);
             _current_key = c;
         }
 #endif
