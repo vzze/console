@@ -5,94 +5,19 @@
 #include <iostream>
 
 #define ESC "\x1b"
-#define CSI "\x1b["
-#define OSC "\x1b]"
-#define ST  "\x7"
+#define CSI ESC "["
 
-#define FG_BLACK          CSI "30m"
-#define FG_RED            CSI "31m"
-#define FG_GREEN          CSI "32m"
-#define FG_YELLOW         CSI "33m"
-#define FG_BLUE           CSI "34m"
-#define FG_MAGENTA        CSI "35m"
-#define FG_CYAN           CSI "36m"
-#define FG_WHITE          CSI "37m"
+#define ALTERNATE_BUFFER CSI "?1049h"
+#define MAIN_BUFFER      CSI "?1049l"
 
-#define BG_BLACK          CSI "40m"
-#define BG_RED            CSI "41m"
-#define BG_GREEN          CSI "42m"
-#define BG_YELLOW         CSI "43m"
-#define BG_BLUE           CSI "44m"
-#define BG_MAGENTA        CSI "45m"
-#define BG_CYAN           CSI "46m"
-#define BG_WHITE          CSI "47m"
+#define HIDE_CURSOR      CSI "?25l"
+#define BUFFER_POSITION  CSI "2;1f"
+#define TITLE_SETTINGS   CSI "1;1f" CSI "30;47m"
+#define SHOW_CURSOR      CSI "?25h"
+#define SOFT_RESET       CSI "!p"
 
-#define FG_BRIGHT_BLACK   CSI "90m"
-#define FG_BRIGHT_RED     CSI "91m"
-#define FG_BRIGHT_GREEN   CSI "92m"
-#define FG_BRIGHT_YELLOW  CSI "93m"
-#define FG_BRIGHT_BLUE    CSI "94m"
-#define FG_BRIGHT_MAGENTA CSI "95m"
-#define FG_BRIGHT_CYAN    CSI "96m"
-#define FG_BRIGHT_WHITE   CSI "97m"
+console::Pixel::Pixel(col::FG _fg, col::BG _bg, char _display) : fg(_fg), bg(_bg), display(_display) {}
 
-#define BG_BRIGHT_BLACK   CSI "100m"
-#define BG_BRIGHT_RED     CSI "101m"
-#define BG_BRIGHT_GREEN   CSI "102m"
-#define BG_BRIGHT_YELLOW  CSI "103m"
-#define BG_BRIGHT_BLUE    CSI "104m"
-#define BG_BRIGHT_MAGENTA CSI "105m"
-#define BG_BRIGHT_CYAN    CSI "106m"
-#define BG_BRIGHT_WHITE   CSI "107m"
-
-#define ALTERNATE_BUFFER  CSI "?1049h"
-#define MAIN_BUFFER       CSI "?1049l"
-
-#define HIDE_CURSOR       CSI "?25l"
-#define BUFFER_POSITION   CSI "2;1f"
-#define TITLE_SETTINGS    CSI "1;1f" CSI "30;47m"
-#define SHOW_CURSOR       CSI "?25h"
-#define SOFT_RESET        CSI "!p"
-
-console::Pixel::Pixel(COLORS _fg, COLORS _bg, char _display) : fg(_fg), bg(_bg), display(_display) {}
-
-const char * console::_impl::_colors[] = {
-    FG_BLACK,
-    FG_RED,
-    FG_GREEN,
-    FG_YELLOW,
-    FG_BLUE,
-    FG_MAGENTA,
-    FG_CYAN,
-    FG_WHITE,
-
-    BG_BLACK,
-    BG_RED,
-    BG_GREEN,
-    BG_YELLOW,
-    BG_BLUE,
-    BG_MAGENTA,
-    BG_CYAN,
-    BG_WHITE,
-
-    FG_BRIGHT_BLACK,
-    FG_BRIGHT_RED,
-    FG_BRIGHT_GREEN,
-    FG_BRIGHT_YELLOW,
-    FG_BRIGHT_BLUE,
-    FG_BRIGHT_MAGENTA,
-    FG_BRIGHT_CYAN,
-    FG_BRIGHT_WHITE,
-
-    BG_BRIGHT_BLACK,
-    BG_BRIGHT_RED,
-    BG_BRIGHT_GREEN,
-    BG_BRIGHT_YELLOW,
-    BG_BRIGHT_BLUE,
-    BG_BRIGHT_MAGENTA,
-    BG_BRIGHT_CYAN,
-    BG_BRIGHT_WHITE,
-};
 #ifdef _WIN32
 HANDLE console::_impl::_hOut;
 HANDLE console::_impl::_hIn;
@@ -113,21 +38,21 @@ std::atomic_char console::_impl::_current_key = 0;
 console::_impl::_buffer console::_impl::_pbuf;
 
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float)>
-console::_impl::_update = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float) -> bool {
+console::_impl::_update_callback = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float) -> bool {
     return true;
 };
 
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t)>
-console::_impl::_init = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool {
+console::_impl::_init_callback = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool {
     return true;
 };
 
-std::function<void(char)> console::_impl::_keycallback = [](char) -> void {};
+std::function<void(char)> console::_impl::_key_callback = [](char) -> void {};
 #ifdef _WIN32
-bool console::_impl::_mpressedbuttons[5] = { false };
+bool console::_impl::_mouse_pressed_buttons[5] = { false };
 
 std::function<void(const bool *, std::size_t, std::size_t)>
-console::_impl::_mousebuttons = [](const bool *, std::size_t, std::size_t) -> void {};
+console::_impl::_mouse_callback = [](const bool *, std::size_t, std::size_t) -> void {};
 
 BOOL console::_impl::_ctrlhandler(DWORD ctrltype) {
     switch(ctrltype) {
@@ -136,7 +61,7 @@ BOOL console::_impl::_ctrlhandler(DWORD ctrltype) {
         case CTRL_BREAK_EVENT:    _failed_exit = true; return true; break;
         case CTRL_LOGOFF_EVENT:   _failed_exit = true; return true; break;
         case CTRL_SHUTDOWN_EVENT: _failed_exit = true; return true; break;
-        default:                  _failed_exit = true; return true;
+        default:                  _failed_exit = true; return true; break;
     }
 }
 #endif
@@ -176,7 +101,7 @@ void console::_impl::_updateinputs() {
                 case KEY_EVENT:
                     if(buf[i].Event.KeyEvent.bKeyDown) {
                         _current_key = buf[i].Event.KeyEvent.uChar.AsciiChar;
-                        _keycallback(buf[i].Event.KeyEvent.uChar.AsciiChar);
+                        _key_callback(buf[i].Event.KeyEvent.uChar.AsciiChar);
                     }
                 break;
                 case MOUSE_EVENT:
@@ -184,12 +109,12 @@ void console::_impl::_updateinputs() {
                         case MOUSE_MOVED:
                             _mouseX = static_cast<std::size_t>(buf[i].Event.MouseEvent.dwMousePosition.X);
                             _mouseY = static_cast<std::size_t>(buf[i].Event.MouseEvent.dwMousePosition.Y);
-                            _mousebuttons(_mpressedbuttons, _mouseX, _mouseY);
+                            _mouse_callback(_mouse_pressed_buttons, _mouseX, _mouseY);
                         break;
                         case 0:
                             for(mb = 0; mb < 5; ++mb)
-                                _mpressedbuttons[mb] = (buf[i].Event.MouseEvent.dwButtonState & (1 << mb)) > 0;
-                            _mousebuttons(_mpressedbuttons, _mouseX, _mouseY);
+                                _mouse_pressed_buttons[mb] = (buf[i].Event.MouseEvent.dwButtonState & (1 << mb)) > 0;
+                            _mouse_callback(_mouse_pressed_buttons, _mouseX, _mouseY);
                         break;
                     }
                 break;
@@ -215,6 +140,7 @@ void console::_impl::_updateinputs() {
         if(res > 0) {
             [[maybe_unused]] auto x = read(fileno(stdin), &c, 1);
             _current_key = c;
+            _key_callback(c);
         }
 #endif
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -275,16 +201,16 @@ void console::_impl::_draw() {
         buffer.clear();
 
         {
-            std::scoped_lock lck(_pbuf.mut_read);
-            for(auto & p : _pbuf.current) {
-                if(fg_code != _colors[static_cast<int>(p.fg)]) {
-                    buffer += _colors[static_cast<int>(p.fg)];
-                    fg_code = _colors[static_cast<int>(p.fg)];
+            std::scoped_lock lck(_pbuf._mut_read);
+            for(auto & p : _pbuf._current) {
+                if(fg_code != _fg_colors[static_cast<std::uint8_t>(p.fg)]) {
+                    buffer += _fg_colors[static_cast<std::uint8_t>(p.fg)];
+                    fg_code = _fg_colors[static_cast<std::uint8_t>(p.fg)];
                 }
 
-                if(bg_code != _colors[static_cast<int>(p.bg)]) {
-                    buffer += _colors[static_cast<int>(p.bg)];
-                    bg_code = _colors[static_cast<int>(p.bg)];
+                if(bg_code != _bg_colors[static_cast<std::uint8_t>(p.bg)]) {
+                    buffer += _bg_colors[static_cast<std::uint8_t>(p.bg)];
+                    bg_code = _bg_colors[static_cast<std::uint8_t>(p.bg)];
                 }
 
                 buffer += p.display;
@@ -301,47 +227,47 @@ int console::init() {
 #ifdef _WIN32
     _impl::_hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    if(_impl::_hOut == INVALID_HANDLE_VALUE) return 1;
+    if(_impl::_hOut == INVALID_HANDLE_VALUE) return 0;
 
     DWORD dwMode = 0;
 
-    if(!GetConsoleMode(_impl::_hOut, &dwMode)) return 1;
+    if(!GetConsoleMode(_impl::_hOut, &dwMode)) return 0;
 
     _impl::_oldhOut = dwMode;
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
 
-    if(!SetConsoleMode(_impl::_hOut, dwMode)) return 1;
+    if(!SetConsoleMode(_impl::_hOut, dwMode)) return 0;
 
     _impl::_hIn = GetStdHandle(STD_INPUT_HANDLE);
 
-    if(!GetConsoleMode(_impl::_hIn, &dwMode)) return 1;
+    if(!GetConsoleMode(_impl::_hIn, &dwMode)) return 0;
 
     _impl::_oldhIn = dwMode;
 
     dwMode = ENABLE_EXTENDED_FLAGS;
     dwMode |= ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
 
-    if(!SetConsoleMode(_impl::_hIn, dwMode)) return 1;
+    if(!SetConsoleMode(_impl::_hIn, dwMode)) return 0;
 #endif
     std::cout << ALTERNATE_BUFFER HIDE_CURSOR;
 
-    return 0;
+    return 1;
 }
 #ifdef _WIN32
 void console::set_mouse_callback(std::function<void(const bool *, std::size_t, std::size_t)> f) {
-    _impl::_mousebuttons = f;
+    _impl::_mouse_callback = f;
 }
 #endif
 void console::set_key_callback(std::function<void(char)> f) {
-    _impl::_keycallback = f;
+    _impl::_key_callback = f;
 }
 
 void console::set_update_callback(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t, double)> f) {
-    _impl::_update = f;
+    _impl::_update_callback = f;
 }
 
 void console::set_init_callback(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t)> f) {
-    _impl::_init = f;
+    _impl::_init_callback = f;
 }
 
 void console::run() {
@@ -359,10 +285,10 @@ void console::run() {
 
     pixels.resize(_impl::_consoleX * _impl::_consoleY);
 
-    if(!_impl::_init(pixels, _impl::_consoleX, _impl::_consoleY))
+    if(!_impl::_init_callback(pixels, _impl::_consoleX, _impl::_consoleY))
         return;
 
-    _impl::_pbuf.next = _impl::_pbuf.current = pixels;
+    _impl::_pbuf._next = _impl::_pbuf._current = pixels;
 
     std::thread renderer(_impl::_draw);
     renderer.detach();
@@ -386,31 +312,35 @@ void console::run() {
         if(_impl::_consoleX * _impl::_consoleY != pixels.size()) [[unlikely]] {
             pixels.resize(_impl::_consoleX * _impl::_consoleY);
 
-            std::scoped_lock lck(_impl::_pbuf.mut_write, _impl::_pbuf.mut_read);
-            _impl::_pbuf.next.resize(pixels.size());
-            _impl::_pbuf.current.resize(pixels.size());
+            std::scoped_lock lck(_impl::_pbuf._mut_write, _impl::_pbuf._mut_read);
+            _impl::_pbuf._next.resize(pixels.size());
+            _impl::_pbuf._current.resize(pixels.size());
         }
 
-        if(!_impl::_update(pixels, _impl::_consoleX, _impl::_consoleY, dTime))
+        if(!_impl::_update_callback(pixels, _impl::_consoleX, _impl::_consoleY, dTime))
             break;
 
         {
-            std::scoped_lock lck(_impl::_pbuf.mut_write);
+            std::scoped_lock lck(_impl::_pbuf._mut_write);
             for(auto & p : pixels) {
-                _impl::_pbuf.next[static_cast<std::size_t>(&p - pixels.begin().base())] = p;
+                _impl::_pbuf._next[static_cast<std::size_t>(&p - pixels.begin().base())] = p;
             }
         }
 
         {
-            std::scoped_lock lck(_impl::_pbuf.mut_write, _impl::_pbuf.mut_read);
-            std::swap(_impl::_pbuf.current, _impl::_pbuf.next);
+            std::scoped_lock lck(_impl::_pbuf._mut_write, _impl::_pbuf._mut_read);
+            std::swap(_impl::_pbuf._current, _impl::_pbuf._next);
         }
     }
+
+    if(renderer.joinable()) renderer.join();
+    if(input_controller.joinable()) input_controller.join();
+
+    std::cout << SOFT_RESET SHOW_CURSOR MAIN_BUFFER; // only switch to main buffer after every thread has finished their job
 }
 
 int console::exit() {
     _impl::_failed_exit = true;
-    std::cout << SOFT_RESET SHOW_CURSOR MAIN_BUFFER;
 #ifdef _WIN32
     if(!SetConsoleMode(_impl::_hOut, _impl::_oldhOut))
         return 1;
@@ -425,11 +355,11 @@ console::Pixel & console::grid::at_2D(std::vector<Pixel> & pixels, std::size_t x
 
 std::size_t console::grid::at_2D(std::size_t x, std::size_t y, std::size_t X) noexcept { return y * X + x; }
 
-void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str, COLORS fg, COLORS bg, std::size_t x, std::size_t y, std::size_t X) {
+void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str, col::FG fg, col::BG bg, std::size_t x, std::size_t y, std::size_t X) {
     set_string(pixels, str, fg, bg, at_2D(x, y, X));
 }
 
-void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str, COLORS fg, COLORS bg, std::size_t pos) {
+void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str, col::FG fg, col::BG bg, std::size_t pos) {
     static std::size_t i;
     if(str.size() > pixels.size() - pos)
         for(i = 0; i < pixels.size() - pos; ++i) {
@@ -445,61 +375,55 @@ void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str
         }
 }
 
-std::size_t console::grid::_impl::_x{};
-std::size_t console::grid::_impl::_y{};
 
 void console::grid::for_each_0(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
-    _impl::_x = 0;
-    _impl::_y = 0;
+    static std::size_t x, y; x = y = 0;
 
-    while(_impl::_y != Y) {
-        while(_impl::_x != X) {
-            func(pixels[_impl::_y * X + _impl::_x]);
-            ++_impl::_x;
+    while(y != Y) {
+        while(x != X) {
+            func(pixels[y * X + x]);
+            ++x;
         }
-        ++_impl::_y;
-        _impl::_x = 0;
+        ++y;
+        x = 0;
     }
 }
 
 void console::grid::for_each_90(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
-    _impl::_x = X - 1;
-    _impl::_y = 0;
+    static std::size_t x, y; x = X - 1; y = 0;
 
-    while(_impl::_x >= 0) {
-        while(_impl::_y != Y) {
-            func(pixels[_impl::_y * X + _impl::_x]);
-            ++_impl::_y;
+    while(x >= 0) {
+        while(y != Y) {
+            func(pixels[y * X + x]);
+            ++y;
         }
-        --_impl::_x;
-        _impl::_y = 0;
+        --x;
+        y = 0;
     }
 }
 
 void console::grid::for_each_180(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
-    _impl::_x = X - 1;
-    _impl::_y = Y - 1;
+    static std::size_t x, y; x = X - 1; y = Y - 1;
 
-    while(_impl::_y >= 0) {
-        while(_impl::_x >= 0) {
-            func(pixels[_impl::_y * X + _impl::_x]);
-            --_impl::_x;
+    while(y >= 0) {
+        while(x >= 0) {
+            func(pixels[y * X + x]);
+            --x;
         }
-        --_impl::_y;
-        _impl::_x = X - 1;
+        --y;
+        x = X - 1;
     }
 }
 
 void console::grid::for_each_270(std::vector<Pixel> & pixels, std::size_t X, std::size_t Y, std::function<void (Pixel &)> func) {
-    _impl::_x = 0;
-    _impl::_y = Y - 1;
+    static std::size_t x, y; x = 0; y = Y - 1;
 
-    while(_impl::_x != X) {
-        while(_impl::_y >= 0) {
-            func(pixels[_impl::_y * X + _impl::_x]);
-            --_impl::_y;
+    while(x != X) {
+        while(y >= 0) {
+            func(pixels[y * X + x]);
+            --y;
         }
-        _impl::_x++;
-        _impl::_y = Y - 1;
+        x++;
+        y = Y - 1;
     }
 }

@@ -13,10 +13,11 @@ void MouseButtonCallback(const bool mouse_buttons[5], std::size_t mouseX, std::s
 // gets called before the main thread starts
 bool Init(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y) {
     console::grid::for_each_0(pixels, X, Y, [](console::Pixel & p) {
-        p.fg = console::COLORS::FG_BLACK;
-        p.bg = console::COLORS::BG_BLACK;
+        p.fg = console::col::FG::BLACK;
+        p.bg = console::col::BG::BLACK;
     });
-    console::grid::set_string(pixels, "Hello World! This is a test for the new string feature", console::COLORS::FG_WHITE, console::COLORS::BG_BLACK, 0, 0, X);
+
+    console::grid::set_string(pixels, "Hello World! This is a test for the new string feature", console::col::FG::WHITE, console::col::BG::BLACK, 0, 0, X);
     return true;
 }
 
@@ -27,7 +28,8 @@ bool Update(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y, 
 }
 
 int main() {
-    console::init();
+    if(!console::init())
+        return 0;
 
     console::set_init_callback(Init);
     console::set_update_callback(Update);
