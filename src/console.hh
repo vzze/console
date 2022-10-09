@@ -5,6 +5,9 @@
 #include <string>
 #include <mutex>
 #include <functional>
+#include <chrono>
+#include <thread>
+#include <iostream>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -13,51 +16,64 @@
 #include <termios.h>
 #endif
 
-#define ESC "\x1b"
-#define CSI ESC "["
-
-#define FG_BLACK           CSI "30m"
-#define FG_RED             CSI "31m"
-#define FG_GREEN           CSI "32m"
-#define FG_YELLOW          CSI "33m"
-#define FG_BLUE            CSI "34m"
-#define FG_MAGENTA         CSI "35m"
-#define FG_CYAN            CSI "36m"
-#define FG_WHITE           CSI "37m"
-
-#define FG_BRIGHT_BLACK    CSI "90m"
-#define FG_BRIGHT_RED      CSI "91m"
-#define FG_BRIGHT_GREEN    CSI "92m"
-#define FG_BRIGHT_YELLOW   CSI "93m"
-#define FG_BRIGHT_BLUE     CSI "94m"
-#define FG_BRIGHT_MAGENTA  CSI "95m"
-#define FG_BRIGHT_CYAN     CSI "96m"
-#define FG_BRIGHT_WHITE    CSI "97m"
-
-#define FG_DEFAULT         CSI "39m"
-
-#define BG_BLACK           CSI "40m"
-#define BG_RED             CSI "41m"
-#define BG_GREEN           CSI "42m"
-#define BG_YELLOW          CSI "43m"
-#define BG_BLUE            CSI "44m"
-#define BG_MAGENTA         CSI "45m"
-#define BG_CYAN            CSI "46m"
-#define BG_WHITE           CSI "47m"
-
-#define BG_BRIGHT_BLACK    CSI "100m"
-#define BG_BRIGHT_RED      CSI "101m"
-#define BG_BRIGHT_GREEN    CSI "102m"
-#define BG_BRIGHT_YELLOW   CSI "103m"
-#define BG_BRIGHT_BLUE     CSI "104m"
-#define BG_BRIGHT_MAGENTA  CSI "105m"
-#define BG_BRIGHT_CYAN     CSI "106m"
-#define BG_BRIGHT_WHITE    CSI "107m"
-
-#define BG_DEFAULT         CSI "49m"
-
 namespace console {
+    namespace seq {
+        inline constexpr char const * const ESC               = "\x1b";
+        inline constexpr char const * const CSI               = "\x1b[";
+
+        inline constexpr char const * const FG_BLACK          = "\x1b[30m";
+        inline constexpr char const * const FG_RED            = "\x1b[31m";
+        inline constexpr char const * const FG_GREEN          = "\x1b[32m";
+        inline constexpr char const * const FG_YELLOW         = "\x1b[33m";
+        inline constexpr char const * const FG_BLUE           = "\x1b[34m";
+        inline constexpr char const * const FG_MAGENTA        = "\x1b[35m";
+        inline constexpr char const * const FG_CYAN           = "\x1b[36m";
+        inline constexpr char const * const FG_WHITE          = "\x1b[37m";
+
+        inline constexpr char const * const FG_BRIGHT_BLACK   = "\x1b[90m";
+        inline constexpr char const * const FG_BRIGHT_RED     = "\x1b[91m";
+        inline constexpr char const * const FG_BRIGHT_GREEN   = "\x1b[92m";
+        inline constexpr char const * const FG_BRIGHT_YELLOW  = "\x1b[93m";
+        inline constexpr char const * const FG_BRIGHT_BLUE    = "\x1b[94m";
+        inline constexpr char const * const FG_BRIGHT_MAGENTA = "\x1b[95m";
+        inline constexpr char const * const FG_BRIGHT_CYAN    = "\x1b[96m";
+        inline constexpr char const * const FG_BRIGHT_WHITE   = "\x1b[97m";
+
+        inline constexpr char const * const FG_DEFAULT        = "\x1b[39m";
+
+        inline constexpr char const * const BG_BLACK          = "\x1b[40m";
+        inline constexpr char const * const BG_RED            = "\x1b[41m";
+        inline constexpr char const * const BG_GREEN          = "\x1b[42m";
+        inline constexpr char const * const BG_YELLOW         = "\x1b[43m";
+        inline constexpr char const * const BG_BLUE           = "\x1b[44m";
+        inline constexpr char const * const BG_MAGENTA        = "\x1b[45m";
+        inline constexpr char const * const BG_CYAN           = "\x1b[46m";
+        inline constexpr char const * const BG_WHITE          = "\x1b[47m";
+
+        inline constexpr char const * const BG_BRIGHT_BLACK   = "\x1b[100m";
+        inline constexpr char const * const BG_BRIGHT_RED     = "\x1b[101m";
+        inline constexpr char const * const BG_BRIGHT_GREEN   = "\x1b[102m";
+        inline constexpr char const * const BG_BRIGHT_YELLOW  = "\x1b[103m";
+        inline constexpr char const * const BG_BRIGHT_BLUE    = "\x1b[104m";
+        inline constexpr char const * const BG_BRIGHT_MAGENTA = "\x1b[105m";
+        inline constexpr char const * const BG_BRIGHT_CYAN    = "\x1b[106m";
+        inline constexpr char const * const BG_BRIGHT_WHITE   = "\x1b[107m";
+
+        inline constexpr char const * const BG_DEFAULT        = "\x1b[49m";
+
+
+        inline constexpr char const * const ALTERNATE_BUFFER  = "\x1b[?1049h";
+        inline constexpr char const * const MAIN_BUFFER       = "\x1b[?1049l";
+
+        inline constexpr char const * const HIDE_CURSOR       = "\x1b[?25l";
+        inline constexpr char const * const BUFFER_POSITION   = "\x1b[1;1f";
+        inline constexpr char const * const SHOW_CURSOR       = "\x1b[?25h";
+        inline constexpr char const * const SOFT_RESET        = "\x1b[!p";
+    }
+
     namespace col {
+        // set of values used to create Pixels representing the 16 ansi colors
+        // DONT_REPLACE should only be used with set_string
         enum class FG : std::uint8_t {
             BLACK          = 0,
             RED            = 1,
@@ -77,9 +93,13 @@ namespace console {
             BRIGHT_CYAN    = 14,
             BRIGHT_WHITE   = 15,
 
-            DEFAULT        = 16
+            DEFAULT        = 16,
+
+            DONT_REPLACE   = 17
         };
 
+        // set of values used to create Pixels representing the 16 ansi colors
+        // DONT_REPLACE should only be used with set_string;
         enum class BG : std::uint8_t {
             BLACK          = 0,
             RED            = 1,
@@ -100,7 +120,9 @@ namespace console {
             BRIGHT_CYAN    = 14,
             BRIGHT_WHITE   = 15,
 
-            DEFAULT        = 16
+            DEFAULT        = 16,
+
+            DONT_REPLACE   = 17
         };
     }
 
@@ -113,47 +135,47 @@ namespace console {
 
     namespace _impl {
         inline constexpr char const * const _fg_colors[] = {
-            FG_BLACK,
-            FG_RED,
-            FG_GREEN,
-            FG_YELLOW,
-            FG_BLUE,
-            FG_MAGENTA,
-            FG_CYAN,
-            FG_WHITE,
+            seq::FG_BLACK,
+            seq::FG_RED,
+            seq::FG_GREEN,
+            seq::FG_YELLOW,
+            seq::FG_BLUE,
+            seq::FG_MAGENTA,
+            seq::FG_CYAN,
+            seq::FG_WHITE,
 
-            FG_BRIGHT_BLACK,
-            FG_BRIGHT_RED,
-            FG_BRIGHT_GREEN,
-            FG_BRIGHT_YELLOW,
-            FG_BRIGHT_BLUE,
-            FG_BRIGHT_MAGENTA,
-            FG_BRIGHT_CYAN,
-            FG_BRIGHT_WHITE,
+            seq::FG_BRIGHT_BLACK,
+            seq::FG_BRIGHT_RED,
+            seq::FG_BRIGHT_GREEN,
+            seq::FG_BRIGHT_YELLOW,
+            seq::FG_BRIGHT_BLUE,
+            seq::FG_BRIGHT_MAGENTA,
+            seq::FG_BRIGHT_CYAN,
+            seq::FG_BRIGHT_WHITE,
 
-            FG_DEFAULT
+            seq::FG_DEFAULT
         };
 
         inline constexpr char const * const _bg_colors[] = {
-            BG_BLACK,
-            BG_RED,
-            BG_GREEN,
-            BG_YELLOW,
-            BG_BLUE,
-            BG_MAGENTA,
-            BG_CYAN,
-            BG_WHITE,
+            seq::BG_BLACK,
+            seq::BG_RED,
+            seq::BG_GREEN,
+            seq::BG_YELLOW,
+            seq::BG_BLUE,
+            seq::BG_MAGENTA,
+            seq::BG_CYAN,
+            seq::BG_WHITE,
 
-            BG_BRIGHT_BLACK,
-            BG_BRIGHT_RED,
-            BG_BRIGHT_GREEN,
-            BG_BRIGHT_YELLOW,
-            BG_BRIGHT_BLUE,
-            BG_BRIGHT_MAGENTA,
-            BG_BRIGHT_CYAN,
-            BG_BRIGHT_WHITE,
+            seq::BG_BRIGHT_BLACK,
+            seq::BG_BRIGHT_RED,
+            seq::BG_BRIGHT_GREEN,
+            seq::BG_BRIGHT_YELLOW,
+            seq::BG_BRIGHT_BLUE,
+            seq::BG_BRIGHT_MAGENTA,
+            seq::BG_BRIGHT_CYAN,
+            seq::BG_BRIGHT_WHITE,
 
-            BG_DEFAULT
+            seq::BG_DEFAULT
         };
 #ifdef _WIN32
         extern HANDLE _hOut;
@@ -163,6 +185,7 @@ namespace console {
         extern DWORD _oldhIn;
 #endif
         extern std::atomic_bool _failed_exit;
+        extern std::atomic_bool _draw_title;
 
         extern std::atomic_size_t _consoleX;
         extern std::atomic_size_t _consoleY;
@@ -206,6 +229,12 @@ namespace console {
     void set_init_callback(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)>);
 
     void run();
+
+    /* toggles inbetween drawing or not drawing the title; */
+    void toggle_title();
+
+    /* false if not being drawn true otherwise; */
+    bool title_state();
 
     /* returns zero if successful; */
     int exit();
@@ -252,48 +281,3 @@ namespace console {
         void for_each_270(std::vector<Pixel> &, std::size_t, std::size_t, std::function<void(Pixel &)>);
     }
 }
-
-#undef ESC
-#undef CSI
-#undef OSC
-#undef ST
-
-#undef FG_BLACK
-#undef FG_RED
-#undef FG_GREEN
-#undef FG_YELLOW
-#undef FG_BLUE
-#undef FG_MAGENTA
-#undef FG_CYAN
-#undef FG_WHITE
-
-#undef FG_BRIGHT_BLACK
-#undef FG_BRIGHT_RED
-#undef FG_BRIGHT_GREEN
-#undef FG_BRIGHT_YELLOW
-#undef FG_BRIGHT_BLUE
-#undef FG_BRIGHT_MAGENTA
-#undef FG_BRIGHT_CYAN
-#undef FG_BRIGHT_WHITE
-
-#undef FG_DEFAULT
-
-#undef BG_BLACK
-#undef BG_RED
-#undef BG_GREEN
-#undef BG_YELLOW
-#undef BG_BLUE
-#undef BG_MAGENTA
-#undef BG_CYAN
-#undef BG_WHITE
-
-#undef BG_BRIGHT_BLACK
-#undef BG_BRIGHT_RED
-#undef BG_BRIGHT_GREEN
-#undef BG_BRIGHT_YELLOW
-#undef BG_BRIGHT_BLUE
-#undef BG_BRIGHT_MAGENTA
-#undef BG_BRIGHT_CYAN
-#undef BG_BRIGHT_WHITE
-
-#undef BG_DEFAULT

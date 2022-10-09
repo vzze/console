@@ -1,7 +1,5 @@
 #include "../src/console.hh"
 
-#include <vector>
-
 void celullar_automata(std::vector<console::Pixel> & pixels, std::size_t & X, std::size_t & Y) {
     static std::vector<std::pair<std::size_t, std::size_t>> to_die;
     static std::vector<std::pair<std::size_t, std::size_t>> to_alive;
@@ -54,15 +52,6 @@ bool Init(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y) {
         p = console::Pixel(console::col::FG::BLACK, console::col::BG::BLACK);
     });
 
-    // R-pentomino
-    pixels[X * Y / 2 + 30 - X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 31 - X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 + 29] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 30] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 + 30 + X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
     // Gosper's gliding gun
     console::grid::at_2D(pixels, 1, 5, X) = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
     console::grid::at_2D(pixels, 2, 5, X) = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
@@ -113,46 +102,6 @@ bool Init(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y) {
 
     console::grid::at_2D(pixels, 36, 3, X) = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
     console::grid::at_2D(pixels, 36, 4, X) = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    // Toad
-    pixels[X * Y / 2 - 20] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 21] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 22] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 - 20 - X + 1] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 21 - X + 1] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 22 - X + 1] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    // Penta-decathlon
-    pixels[X * Y / 2 - X * 4] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 1 - X * 4] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 1 - X * 4] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 - 1 - X * 3] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 1 - X * 3] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 - X * 2] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 1 - X * 2] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 1 - X * 2] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 - X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 1 - X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 1 - X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 1] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 1] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 + X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 1 + X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 1 + X] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 - 1 + X * 2] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 1 + X * 2] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-
-    pixels[X * Y / 2 + X * 3] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 - 1 + X * 3] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
-    pixels[X * Y / 2 + 1 + X * 3] = console::Pixel(console::col::FG::WHITE, console::col::BG::WHITE);
 
     return true;
 }

@@ -12,6 +12,8 @@ void MouseButtonCallback(const bool mouse_buttons[5], std::size_t mouseX, std::s
 #endif
 // gets called before the main thread starts
 bool Init(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y) {
+    console::toggle_title();
+
     console::grid::for_each_0(pixels, X, Y, [](console::Pixel & p) {
         p.fg = console::col::FG::BLACK;
         p.bg = console::col::BG::BLACK;

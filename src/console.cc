@@ -1,21 +1,5 @@
 #include "console.hh"
 
-#include <chrono>
-#include <thread>
-#include <iostream>
-
-#define ESC "\x1b"
-#define CSI ESC "["
-
-#define ALTERNATE_BUFFER CSI "?1049h"
-#define MAIN_BUFFER      CSI "?1049l"
-
-#define HIDE_CURSOR      CSI "?25l"
-#define BUFFER_POSITION  CSI "2;1f"
-#define TITLE_SETTINGS   CSI "1;1f" CSI "30;47m"
-#define SHOW_CURSOR      CSI "?25h"
-#define SOFT_RESET       CSI "!p"
-
 console::Pixel::Pixel(col::FG _fg, col::BG _bg, char _display) : fg(_fg), bg(_bg), display(_display) {}
 
 #ifdef _WIN32
@@ -26,6 +10,7 @@ DWORD console::_impl::_oldhOut;
 DWORD console::_impl::_oldhIn;
 #endif
 std::atomic_bool console::_impl::_failed_exit = false;
+std::atomic_bool console::_impl::_draw_title = true;
 
 std::atomic_size_t console::_impl::_consoleX = 0;
 std::atomic_size_t console::_impl::_consoleY = 0;
@@ -90,7 +75,7 @@ void console::_impl::_updateinputs() {
     tcsetattr(fileno(stdin), TCSANOW, &newsets);
 #endif
     while(true) {
-        if(_failed_exit)
+        if(_failed_exit) [[unlikely]]
             return;
 #ifdef _WIN32
         GetNumberOfConsoleInputEvents(_hIn, &read);
@@ -120,7 +105,7 @@ void console::_impl::_updateinputs() {
                 break;
                 case WINDOW_BUFFER_SIZE_EVENT:
                     _consoleX = static_cast<std::size_t>(buf[i].Event.WindowBufferSizeEvent.dwSize.X);
-                    _consoleY = static_cast<std::size_t>(buf[i].Event.WindowBufferSizeEvent.dwSize.Y - 1);
+                    _consoleY = static_cast<std::size_t>(buf[i].Event.WindowBufferSizeEvent.dwSize.Y);
                 break;
             }
 #elif defined(__unix__)
@@ -168,7 +153,7 @@ void console::_impl::_draw() {
     const char * bg_code = nullptr;
 
     while(true) {
-        if(_failed_exit)
+        if(_failed_exit) [[unlikely]]
             return;
 
         t1 = std::chrono::high_resolution_clock::now();
@@ -202,6 +187,10 @@ void console::_impl::_draw() {
 
         {
             std::scoped_lock lck(_pbuf._mut_read);
+
+            if(_draw_title)
+                grid::set_string(_pbuf._current, title, col::FG::RED, col::BG::DONT_REPLACE, 0);
+
             for(auto & p : _pbuf._current) {
                 if(fg_code != _fg_colors[static_cast<std::uint8_t>(p.fg)]) {
                     buffer += _fg_colors[static_cast<std::uint8_t>(p.fg)];
@@ -217,7 +206,7 @@ void console::_impl::_draw() {
             }
         }
 
-        std::cout << BUFFER_POSITION << buffer << TITLE_SETTINGS << title;
+        std::cout << seq::BUFFER_POSITION << buffer;
 
         fg_code = bg_code = nullptr;
     }
@@ -248,8 +237,10 @@ int console::init() {
     dwMode |= ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
 
     if(!SetConsoleMode(_impl::_hIn, dwMode)) return 0;
+
+    if(!SetConsoleCtrlHandler(console::_impl::_ctrlhandler, TRUE)) return 0;
 #endif
-    std::cout << ALTERNATE_BUFFER HIDE_CURSOR;
+    std::cout << seq::ALTERNATE_BUFFER << seq::HIDE_CURSOR;
 
     return 1;
 }
@@ -271,21 +262,16 @@ void console::set_init_callback(std::function<bool(std::vector<console::Pixel>&,
 }
 
 void console::run() {
-#ifdef _WIN32
-    if(!SetConsoleCtrlHandler(console::_impl::_ctrlhandler, TRUE))
-        return;
-#endif
     std::vector<Pixel> pixels = {};
 
     std::thread input_controller(_impl::_updateinputs);
     input_controller.detach();
 
-    std::cout << TITLE_SETTINGS "Loading...";
-    std::this_thread::sleep_for(std::chrono::milliseconds(128));
+    while(_impl::_consoleX == 0 || _impl::_consoleY == 0) {}
 
     pixels.resize(_impl::_consoleX * _impl::_consoleY);
 
-    if(!_impl::_init_callback(pixels, _impl::_consoleX, _impl::_consoleY))
+    if(!_impl::_init_callback(pixels, _impl::_consoleX, _impl::_consoleY)) [[unlikely]]
         return;
 
     _impl::_pbuf._next = _impl::_pbuf._current = pixels;
@@ -300,7 +286,7 @@ void console::run() {
     float dTime;
 
     while(true) {
-        if(_impl::_failed_exit)
+        if(_impl::_failed_exit) [[unlikely]]
             break;
 
         t1 = std::chrono::high_resolution_clock::now();
@@ -317,7 +303,7 @@ void console::run() {
             _impl::_pbuf._current.resize(pixels.size());
         }
 
-        if(!_impl::_update_callback(pixels, _impl::_consoleX, _impl::_consoleY, dTime))
+        if(!_impl::_update_callback(pixels, _impl::_consoleX, _impl::_consoleY, dTime)) [[unlikely]]
             break;
 
         {
@@ -336,7 +322,17 @@ void console::run() {
     if(renderer.joinable()) renderer.join();
     if(input_controller.joinable()) input_controller.join();
 
-    std::cout << SOFT_RESET SHOW_CURSOR MAIN_BUFFER; // only switch to main buffer after every thread has finished their job
+    std::cout.flush();
+
+    std::cout << seq::SOFT_RESET << seq::SHOW_CURSOR << seq::MAIN_BUFFER; // only switch to main buffer after every thread has finished their job
+}
+
+void console::toggle_title() {
+    _impl::_draw_title = !_impl::_draw_title;
+}
+
+bool console::title_state() {
+    return _impl::_draw_title;
 }
 
 int console::exit() {
@@ -362,16 +358,20 @@ void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str
 void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str, col::FG fg, col::BG bg, std::size_t pos) {
     static std::size_t i;
     if(str.size() > pixels.size() - pos)
-        for(i = 0; i < pixels.size() - pos; ++i) {
+        for(i = 0; i != pixels.size() - pos; ++i) {
             pixels[pos + i].display = str[i];
-            pixels[pos + i].bg = bg;
-            pixels[pos + i].fg = fg;
+            if(bg != col::BG::DONT_REPLACE)
+                pixels[pos + i].bg = bg;
+            if(fg != col::FG::DONT_REPLACE)
+                pixels[pos + i].fg = fg;
         }
     else
-        for(i = 0; i < str.size(); ++i) {
+        for(i = 0; i != str.size(); ++i) {
             pixels[pos + i].display = str[i];
-            pixels[pos + i].bg = bg;
-            pixels[pos + i].fg = fg;
+            if(bg != col::BG::DONT_REPLACE)
+                pixels[pos + i].bg = bg;
+            if(fg != col::FG::DONT_REPLACE)
+                pixels[pos + i].fg = fg;
         }
 }
 
