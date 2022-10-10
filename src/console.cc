@@ -123,7 +123,7 @@ std::function<void(char)> console::_impl::_key_callback = [](char) -> void {};
 #ifdef _WIN32
 bool console::_impl::_mouse_pressed_buttons[5] = { false };
 
-std::function<void(const bool *, std::size_t, std::size_t)>
+std::function<void(const bool[5], std::size_t, std::size_t)>
 console::_impl::_mouse_callback = [](const bool *, std::size_t, std::size_t) -> void {};
 
 BOOL console::_impl::_ctrlhandler(DWORD ctrltype) {
@@ -342,7 +342,7 @@ void console::_impl::_draw() {
     }
 }
 
-int console::init() {
+std::int32_t console::init() {
 #ifdef _WIN32
     _impl::_hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -465,7 +465,7 @@ bool console::title_state() {
     return _impl::_draw_title;
 }
 
-int console::exit() {
+std::int32_t console::exit() {
     _impl::_failed_exit = true;
 #ifdef _WIN32
     if(!SetConsoleMode(_impl::_hOut, _impl::_oldhOut))

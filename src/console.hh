@@ -341,9 +341,9 @@ namespace console {
     }
 
     /* returns nonzero value if successful; */
-    int init();
+    std::int32_t init();
 #ifdef _WIN32
-    void set_mouse_callback(std::function<void(const bool *, std::size_t, std::size_t)>);
+    void set_mouse_callback(std::function<void(const bool[5], std::size_t, std::size_t)>);
 #endif
     void set_key_callback(std::function<void(char)>);
 
@@ -360,7 +360,7 @@ namespace console {
     bool title_state();
 
     /* returns zero if successful; */
-    int exit();
+    std::int32_t exit();
 
     // collection of utility functions to interact with the pixel buffer
     namespace grid {
