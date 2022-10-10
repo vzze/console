@@ -139,16 +139,16 @@ BOOL console::_impl::_ctrlhandler(DWORD ctrltype) {
 #endif
 void console::_impl::_updateinputs() {
 #ifdef _WIN32
-    INPUT_RECORD buf[32];
+    INPUT_RECORD * buf;
     DWORD read, i;
 
-    int mb = 0;
+    std::size_t mb = 0;
 #elif defined(__unix__)
     struct winsize w;
 
     struct termios oldsets, newsets;
 
-    int res;
+    std::int64_t res;
 
     char c;
 
@@ -166,6 +166,7 @@ void console::_impl::_updateinputs() {
             return;
 #ifdef _WIN32
         GetNumberOfConsoleInputEvents(_hIn, &read);
+        buf = new INPUT_RECORD[read];
         ReadConsoleInput(_hIn, buf, read, &read);
 
         for(i = 0; i < read; ++i)
@@ -195,6 +196,7 @@ void console::_impl::_updateinputs() {
                     _consoleY = static_cast<std::size_t>(buf[i].Event.WindowBufferSizeEvent.dwSize.Y);
                 break;
             }
+        delete[] buf;
 #elif defined(__unix__)
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
@@ -215,7 +217,6 @@ void console::_impl::_updateinputs() {
             _key_callback(c);
         }
 #endif
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 #ifdef __unix__
     tcsetattr(fileno(stdin), TCSANOW, &oldsets);
@@ -231,7 +232,7 @@ void console::_impl::_draw() {
     std::chrono::duration<float> fps;
     float dFps;
 
-    int counter = 0;
+    std::int32_t counter = 0;
 
     std::string title;
     std::string buffer;
