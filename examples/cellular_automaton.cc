@@ -6,15 +6,15 @@ void celullar_automata(std::vector<console::Pixel> & pixels, std::size_t & X, st
 
     static const auto neighbours = [&](std::size_t x, std::size_t y) {
         std::size_t i = 0;
-        try { if(console::grid::at_2D(pixels, x - 1, y - 1, X).bg == console::col::BG::WHITE) ++i; } catch(...) {}
-        try { if(console::grid::at_2D(pixels, x + 1, y + 1, X).bg == console::col::BG::WHITE) ++i; } catch(...) {}
-        try { if(console::grid::at_2D(pixels, x - 1, y + 1, X).bg == console::col::BG::WHITE) ++i; } catch(...) {}
-        try { if(console::grid::at_2D(pixels, x + 1, y - 1, X).bg == console::col::BG::WHITE) ++i; } catch(...) {}
+        try { if(console::grid::at_2D(pixels, x - 1, y - 1, X).bg() == console::col::BG::WHITE) ++i; } catch(...) {}
+        try { if(console::grid::at_2D(pixels, x + 1, y + 1, X).bg() == console::col::BG::WHITE) ++i; } catch(...) {}
+        try { if(console::grid::at_2D(pixels, x - 1, y + 1, X).bg() == console::col::BG::WHITE) ++i; } catch(...) {}
+        try { if(console::grid::at_2D(pixels, x + 1, y - 1, X).bg() == console::col::BG::WHITE) ++i; } catch(...) {}
 
-        try { if(console::grid::at_2D(pixels, x - 1, y, X).bg == console::col::BG::WHITE) ++i; } catch(...) {}
-        try { if(console::grid::at_2D(pixels, x + 1, y, X).bg == console::col::BG::WHITE) ++i; } catch(...) {}
-        try { if(console::grid::at_2D(pixels, x, y - 1, X).bg == console::col::BG::WHITE) ++i; } catch(...) {}
-        try { if(console::grid::at_2D(pixels, x, y + 1, X).bg == console::col::BG::WHITE) ++i; } catch(...) {}
+        try { if(console::grid::at_2D(pixels, x - 1, y, X).bg() == console::col::BG::WHITE) ++i; } catch(...) {}
+        try { if(console::grid::at_2D(pixels, x + 1, y, X).bg() == console::col::BG::WHITE) ++i; } catch(...) {}
+        try { if(console::grid::at_2D(pixels, x, y - 1, X).bg() == console::col::BG::WHITE) ++i; } catch(...) {}
+        try { if(console::grid::at_2D(pixels, x, y + 1, X).bg() == console::col::BG::WHITE) ++i; } catch(...) {}
 
         return i;
     };

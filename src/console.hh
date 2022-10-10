@@ -7,6 +7,7 @@
 #include <functional>
 #include <chrono>
 #include <thread>
+#include <bitset>
 #include <iostream>
 
 #ifdef _WIN32
@@ -18,62 +19,124 @@
 
 namespace console {
     namespace seq {
-        inline constexpr char const * const ESC               = "\x1b";
-        inline constexpr char const * const CSI               = "\x1b[";
+        inline constexpr char const * const ESC                   = "\x1b";
+        inline constexpr char const * const CSI                   = "\x1b[";
 
-        inline constexpr char const * const FG_BLACK          = "\x1b[30m";
-        inline constexpr char const * const FG_RED            = "\x1b[31m";
-        inline constexpr char const * const FG_GREEN          = "\x1b[32m";
-        inline constexpr char const * const FG_YELLOW         = "\x1b[33m";
-        inline constexpr char const * const FG_BLUE           = "\x1b[34m";
-        inline constexpr char const * const FG_MAGENTA        = "\x1b[35m";
-        inline constexpr char const * const FG_CYAN           = "\x1b[36m";
-        inline constexpr char const * const FG_WHITE          = "\x1b[37m";
+        inline constexpr char const * const FG_BLACK              = "\x1b[30m";
+        inline constexpr char const * const FG_RED                = "\x1b[31m";
+        inline constexpr char const * const FG_GREEN              = "\x1b[32m";
+        inline constexpr char const * const FG_YELLOW             = "\x1b[33m";
+        inline constexpr char const * const FG_BLUE               = "\x1b[34m";
+        inline constexpr char const * const FG_MAGENTA            = "\x1b[35m";
+        inline constexpr char const * const FG_CYAN               = "\x1b[36m";
+        inline constexpr char const * const FG_WHITE              = "\x1b[37m";
 
-        inline constexpr char const * const FG_BRIGHT_BLACK   = "\x1b[90m";
-        inline constexpr char const * const FG_BRIGHT_RED     = "\x1b[91m";
-        inline constexpr char const * const FG_BRIGHT_GREEN   = "\x1b[92m";
-        inline constexpr char const * const FG_BRIGHT_YELLOW  = "\x1b[93m";
-        inline constexpr char const * const FG_BRIGHT_BLUE    = "\x1b[94m";
-        inline constexpr char const * const FG_BRIGHT_MAGENTA = "\x1b[95m";
-        inline constexpr char const * const FG_BRIGHT_CYAN    = "\x1b[96m";
-        inline constexpr char const * const FG_BRIGHT_WHITE   = "\x1b[97m";
+        inline constexpr char const * const FG_BRIGHT_BLACK       = "\x1b[90m";
+        inline constexpr char const * const FG_BRIGHT_RED         = "\x1b[91m";
+        inline constexpr char const * const FG_BRIGHT_GREEN       = "\x1b[92m";
+        inline constexpr char const * const FG_BRIGHT_YELLOW      = "\x1b[93m";
+        inline constexpr char const * const FG_BRIGHT_BLUE        = "\x1b[94m";
+        inline constexpr char const * const FG_BRIGHT_MAGENTA     = "\x1b[95m";
+        inline constexpr char const * const FG_BRIGHT_CYAN        = "\x1b[96m";
+        inline constexpr char const * const FG_BRIGHT_WHITE       = "\x1b[97m";
 
-        inline constexpr char const * const FG_DEFAULT        = "\x1b[39m";
+        inline constexpr char const * const FG_DEFAULT            = "\x1b[39m";
 
-        inline constexpr char const * const BG_BLACK          = "\x1b[40m";
-        inline constexpr char const * const BG_RED            = "\x1b[41m";
-        inline constexpr char const * const BG_GREEN          = "\x1b[42m";
-        inline constexpr char const * const BG_YELLOW         = "\x1b[43m";
-        inline constexpr char const * const BG_BLUE           = "\x1b[44m";
-        inline constexpr char const * const BG_MAGENTA        = "\x1b[45m";
-        inline constexpr char const * const BG_CYAN           = "\x1b[46m";
-        inline constexpr char const * const BG_WHITE          = "\x1b[47m";
+        inline constexpr char const * const BG_BLACK              = "\x1b[40m";
+        inline constexpr char const * const BG_RED                = "\x1b[41m";
+        inline constexpr char const * const BG_GREEN              = "\x1b[42m";
+        inline constexpr char const * const BG_YELLOW             = "\x1b[43m";
+        inline constexpr char const * const BG_BLUE               = "\x1b[44m";
+        inline constexpr char const * const BG_MAGENTA            = "\x1b[45m";
+        inline constexpr char const * const BG_CYAN               = "\x1b[46m";
+        inline constexpr char const * const BG_WHITE              = "\x1b[47m";
 
-        inline constexpr char const * const BG_BRIGHT_BLACK   = "\x1b[100m";
-        inline constexpr char const * const BG_BRIGHT_RED     = "\x1b[101m";
-        inline constexpr char const * const BG_BRIGHT_GREEN   = "\x1b[102m";
-        inline constexpr char const * const BG_BRIGHT_YELLOW  = "\x1b[103m";
-        inline constexpr char const * const BG_BRIGHT_BLUE    = "\x1b[104m";
-        inline constexpr char const * const BG_BRIGHT_MAGENTA = "\x1b[105m";
-        inline constexpr char const * const BG_BRIGHT_CYAN    = "\x1b[106m";
-        inline constexpr char const * const BG_BRIGHT_WHITE   = "\x1b[107m";
+        inline constexpr char const * const BG_BRIGHT_BLACK       = "\x1b[100m";
+        inline constexpr char const * const BG_BRIGHT_RED         = "\x1b[101m";
+        inline constexpr char const * const BG_BRIGHT_GREEN       = "\x1b[102m";
+        inline constexpr char const * const BG_BRIGHT_YELLOW      = "\x1b[103m";
+        inline constexpr char const * const BG_BRIGHT_BLUE        = "\x1b[104m";
+        inline constexpr char const * const BG_BRIGHT_MAGENTA     = "\x1b[105m";
+        inline constexpr char const * const BG_BRIGHT_CYAN        = "\x1b[106m";
+        inline constexpr char const * const BG_BRIGHT_WHITE       = "\x1b[107m";
 
-        inline constexpr char const * const BG_DEFAULT        = "\x1b[49m";
+        inline constexpr char const * const BG_DEFAULT            = "\x1b[49m";
 
+        inline constexpr char const * const POSITIVE              = "\x1b[27m";
+        inline constexpr char const * const NEGATIVE              = "\x1b[7m";
 
-        inline constexpr char const * const ALTERNATE_BUFFER  = "\x1b[?1049h";
-        inline constexpr char const * const MAIN_BUFFER       = "\x1b[?1049l";
+        inline constexpr char const * const ALTERNATE_BUFFER      = "\x1b[?1049h";
+        inline constexpr char const * const MAIN_BUFFER           = "\x1b[?1049l";
 
-        inline constexpr char const * const HIDE_CURSOR       = "\x1b[?25l";
-        inline constexpr char const * const BUFFER_POSITION   = "\x1b[1;1f";
-        inline constexpr char const * const SHOW_CURSOR       = "\x1b[?25h";
-        inline constexpr char const * const SOFT_RESET        = "\x1b[!p";
+        inline constexpr char const * const HIDE_CURSOR           = "\x1b[?25l";
+        inline constexpr char const * const BUFFER_POSITION       = "\x1b[1;1f";
+        inline constexpr char const * const SHOW_CURSOR           = "\x1b[?25h";
+        inline constexpr char const * const SOFT_RESET            = "\x1b[!p";
+
+        inline constexpr char const * const TEXT_BOLD             = "\x1b[1m";
+        inline constexpr char const * const TEXT_ITALIC           = "\x1b[3m";
+        inline constexpr char const * const TEXT_UNDERLINE        = "\x1b[4m";
+        inline constexpr char const * const TEXT_STRIKETHROUGH    = "\x1b[9m";
+
+        inline constexpr char const * const TEXT_NO_BOLD          = "\x1b[22m";
+        inline constexpr char const * const TEXT_NO_ITALIC        = "\x1b[23m";
+        inline constexpr char const * const TEXT_NO_UNDERLINE     = "\x1b[24m";
+        inline constexpr char const * const TEXT_NO_STRIKETHROUGH = "\x1b[29m";
     }
 
     namespace col {
-        // set of values used to create Pixels representing the 16 ansi colors
-        // DONT_REPLACE should only be used with set_string
+        // set of values used to create Pixels representing the 16 ansi colors;
+        // swaps fg and bg colors;
+        // default NO;
+        // DONT_REPLACE should only be used with set_string;
+        enum class INVERT : std::uint8_t {
+            YES = 0,
+            NO  = 1,
+            DONT_REPLACE = 2
+        };
+
+        // set of values used to create Pixels representing the 16 ansi colors;
+        // bold will turn pixel fg/bg into the "bright" version;
+        // default NO;
+        // DONT_REPLACE should only be used with set_string;
+        enum class BOLD : std::uint8_t {
+            YES = 0,
+            NO  = 1,
+            DONT_REPLACE = 2
+        };
+
+        // set of values used to create Pixels representing the 16 ansi colors;
+        // text will be either italic or not;
+        // default NO;
+        // DONT_REPLACE should only be used with set_string;
+        enum class ITALIC : std::uint8_t {
+            YES = 0,
+            NO  = 1,
+            DONT_REPLACE = 2
+        };
+
+        // set of values used to create Pixels representing the 16 ansi colors;
+        // text will be either underlined or not;
+        // default NO;
+        // DONT_REPLACE should only be used with set_string;
+        enum class UNDERLINE : std::uint8_t {
+            YES = 0,
+            NO  = 1,
+            DONT_REPLACE = 2
+        };
+
+        // set of values used to create Pixels representing the 16 ansi colors;
+        // text will be either strikethrough or not;
+        // default NO;
+        // DONT_REPLACE should only be used with set_string;
+        enum class STRIKETHROUGH : std::uint8_t {
+            YES = 0,
+            NO  = 1,
+            DONT_REPLACE = 2
+        };
+
+        // set of values used to create Pixels representing the 16 ansi colors;
+        // DONT_REPLACE should only be used with set_string;
         enum class FG : std::uint8_t {
             BLACK          = 0,
             RED            = 1,
@@ -98,7 +161,7 @@ namespace console {
             DONT_REPLACE   = 17
         };
 
-        // set of values used to create Pixels representing the 16 ansi colors
+        // set of values used to create Pixels representing the 16 ansi colors;
         // DONT_REPLACE should only be used with set_string;
         enum class BG : std::uint8_t {
             BLACK          = 0,
@@ -127,10 +190,44 @@ namespace console {
     }
 
     struct Pixel {
-        col::FG fg;
-        col::BG bg;
-        char display;
-        Pixel(col::FG _fg = col::FG::BLACK, col::BG _bg = col::BG::BLACK, char _display = ' ');
+        private:
+            //            INVERTED
+            //  FG   BG   | I S
+            //  v    v    v v v
+            // 0100001000010101
+            //             ^ ^
+            //             B U
+            std::bitset<16> values;
+            char display;
+        public:
+            Pixel(
+                col::FG = col::FG::BLACK,
+                col::BG = col::BG::BLACK,
+                char = ' ',
+                col::INVERT = col::INVERT::NO,
+                col::BOLD = col::BOLD::NO,
+                col::ITALIC = col::ITALIC::NO,
+                col::UNDERLINE = col::UNDERLINE::NO,
+                col::STRIKETHROUGH = col::STRIKETHROUGH::NO
+            ) noexcept;
+            /* getter; */
+            col::FG            fg()            const noexcept;
+            col::BG            bg()            const noexcept;
+            char               displayed()     const noexcept;
+            col::INVERT        inverted()      const noexcept;
+            col::BOLD          bold()          const noexcept;
+            col::ITALIC        italic()        const noexcept;
+            col::UNDERLINE     underline()     const noexcept;
+            col::STRIKETHROUGH strikethrough() const noexcept;
+            /* setter; */
+            void fg(col::FG)                       noexcept;
+            void bg(col::BG)                       noexcept;
+            void displayed(char)                   noexcept;
+            void inverted(col::INVERT)             noexcept;
+            void bold(col::BOLD)                   noexcept;
+            void italic(col::ITALIC)               noexcept;
+            void underline(col::UNDERLINE)         noexcept;
+            void strikethrough(col::STRIKETHROUGH) noexcept;
     };
 
     namespace _impl {
@@ -176,6 +273,32 @@ namespace console {
             seq::BG_BRIGHT_WHITE,
 
             seq::BG_DEFAULT
+        };
+
+        inline constexpr char const * const _pos_ne[] = {
+            seq::NEGATIVE,
+            seq::POSITIVE
+        };
+
+        inline constexpr char const * const _bold[] = {
+            seq::TEXT_BOLD,
+            seq::TEXT_NO_BOLD,
+        };
+
+        inline constexpr char const * const _italic[] = {
+            seq::TEXT_ITALIC,
+            seq::TEXT_NO_ITALIC,
+        };
+
+        inline constexpr char const * const _underline[] = {
+            seq::TEXT_UNDERLINE,
+            seq::TEXT_NO_UNDERLINE,
+        };
+
+
+        inline constexpr char const * const _strikethrough[] = {
+            seq::TEXT_STRIKETHROUGH,
+            seq::TEXT_NO_STRIKETHROUGH,
         };
 #ifdef _WIN32
         extern HANDLE _hOut;
@@ -255,14 +378,22 @@ namespace console {
         // throws if out of bounds;
         // if string is larger than remaining space in vector its cut;
         // using escape sequences like \n or \t WILL break the pixel buffer;
-        void set_string(std::vector<Pixel> &, std::string_view, col::FG fg, col::BG bg, std::size_t, std::size_t, std::size_t);
+        void set_string(
+            std::vector<Pixel> &, std::string_view, col::FG fg, col::BG bg,
+            col::INVERT, col::BOLD, col::ITALIC, col::UNDERLINE, col::STRIKETHROUGH,
+            std::size_t, std::size_t, std::size_t
+        );
 
         // parameters: pixel buffer, string, fg,
         // bg, vector position;
         // throws if out of bounds;
         // if string is larger than remaining space in vector its cut;
         // using escape sequences like \n or \t WILL break the pixel buffer;
-        void set_string(std::vector<Pixel> &, std::string_view, col::FG fg, col::BG bg, std::size_t);
+        void set_string(
+            std::vector<Pixel> &, std::string_view, col::FG fg, col::BG bg,
+            col::INVERT, col::BOLD, col::ITALIC, col::UNDERLINE, col::STRIKETHROUGH,
+            std::size_t
+        );
 
         // parameters: pixel buffer, number of columns (X), number of lines (Y), function with side effect;
         // 0 degree for_each applied on a pixel buffer;

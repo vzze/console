@@ -1,6 +1,93 @@
 #include "console.hh"
 
-console::Pixel::Pixel(col::FG _fg, col::BG _bg, char _display) : fg(_fg), bg(_bg), display(_display) {}
+console::Pixel::Pixel(
+    col::FG _fg,
+    col::BG _bg,
+    char _disp,
+    col::INVERT _inv,
+    col::BOLD _b,
+    col::ITALIC _i,
+    col::UNDERLINE _u,
+    col::STRIKETHROUGH _s
+) noexcept {
+    values[0] = static_cast<bool>(_s);
+    values[1] = static_cast<bool>(_u);
+    values[2] = static_cast<bool>(_i);
+    values[3] = static_cast<bool>(_b);
+    values[4] = static_cast<bool>(_inv);
+
+    display = _disp;
+
+    for(std::uint8_t i = 0; i < 5; ++i) {
+        values[i + 5U]  = static_cast<std::uint8_t>(_bg) >> i & 0b1;
+        values[i + 10U] = static_cast<std::uint8_t>(_fg) >> i & 0b1;
+    }
+}
+
+console::col::FG console::Pixel::fg() const noexcept {
+    return static_cast<col::FG>(static_cast<std::uint8_t>(values.to_ulong() >> 10U));
+}
+
+console::col::BG console::Pixel::bg() const noexcept {
+    return static_cast<col::BG>(static_cast<std::uint8_t>(values.to_ulong() >> 5U & 0b11111));
+}
+
+char console::Pixel::displayed() const noexcept {
+    return display;
+}
+
+console::col::INVERT console::Pixel::inverted() const noexcept {
+    return static_cast<col::INVERT>(static_cast<std::uint8_t>(values[4]));
+}
+
+console::col::BOLD console::Pixel::bold() const noexcept {
+    return static_cast<col::BOLD>(static_cast<std::uint8_t>(values[3]));
+}
+
+console::col::ITALIC console::Pixel::italic() const noexcept {
+    return static_cast<col::ITALIC>(static_cast<std::uint8_t>(values[2]));
+}
+
+console::col::UNDERLINE console::Pixel::underline() const noexcept {
+    return static_cast<col::UNDERLINE>(static_cast<std::uint8_t>(values[1]));
+}
+
+console::col::STRIKETHROUGH console::Pixel::strikethrough() const noexcept {
+    return static_cast<col::STRIKETHROUGH>(static_cast<std::uint8_t>(values[0]));
+}
+
+void console::Pixel::fg(col::FG _fg) noexcept {
+    for(std::size_t i = 0; i < 5; ++i)
+        values[i + 10U] = static_cast<std::uint8_t>(_fg) >> i & 0b1;
+}
+
+void console::Pixel::bg(col::BG _bg) noexcept {
+    for(std::size_t i = 0; i < 5; ++i)
+        values[i + 5U] = static_cast<std::uint8_t>(_bg) >> i & 0b1;
+}
+
+void console::Pixel::displayed(char _disp) noexcept {
+    display = _disp;
+}
+
+void console::Pixel::inverted(col::INVERT _inv) noexcept {
+    values[4] = static_cast<bool>(_inv);
+}
+
+void console::Pixel::bold(col::BOLD _b) noexcept {
+    values[3] = static_cast<bool>(_b);
+}
+
+void console::Pixel::italic(col::ITALIC _i) noexcept {
+    values[2] = static_cast<bool>(_i);
+}
+
+void console::Pixel::underline(col::UNDERLINE _u) noexcept {
+    values[1] = static_cast<bool>(_u);
+}
+void console::Pixel::strikethrough(col::STRIKETHROUGH _s) noexcept {
+    values[0] = static_cast<bool>(_s);
+}
 
 #ifdef _WIN32
 HANDLE console::_impl::_hOut;
@@ -149,8 +236,13 @@ void console::_impl::_draw() {
     std::string title;
     std::string buffer;
 
-    const char * fg_code = nullptr;
-    const char * bg_code = nullptr;
+    const char * fg_code = nullptr;       std::uint8_t fg;
+    const char * bg_code = nullptr;       std::uint8_t bg;
+    const char * pos_ne  = nullptr;       std::uint8_t pn;
+    const char * bold    = nullptr;       std::uint8_t b;
+    const char * italic  = nullptr;       std::uint8_t i;
+    const char * underline = nullptr;     std::uint8_t u;
+    const char * strikethrough = nullptr; std::uint8_t s;
 
     while(true) {
         if(_failed_exit) [[unlikely]]
@@ -189,26 +281,63 @@ void console::_impl::_draw() {
             std::scoped_lock lck(_pbuf._mut_read);
 
             if(_draw_title)
-                grid::set_string(_pbuf._current, title, col::FG::RED, col::BG::DONT_REPLACE, 0);
+                grid::set_string(
+                    _pbuf._current, title, col::FG::RED, col::BG::DONT_REPLACE,
+                    col::INVERT::DONT_REPLACE, col::BOLD::DONT_REPLACE, col::ITALIC::DONT_REPLACE,
+                    col::UNDERLINE::DONT_REPLACE, col::STRIKETHROUGH::DONT_REPLACE, 0
+                );
 
             for(auto & p : _pbuf._current) {
-                if(fg_code != _fg_colors[static_cast<std::uint8_t>(p.fg)]) {
-                    buffer += _fg_colors[static_cast<std::uint8_t>(p.fg)];
-                    fg_code = _fg_colors[static_cast<std::uint8_t>(p.fg)];
+                fg = static_cast<std::uint8_t>(p.fg());
+                bg = static_cast<std::uint8_t>(p.bg());
+                pn = static_cast<std::uint8_t>(p.inverted());
+                b = static_cast<std::uint8_t>(p.bold());
+                i = static_cast<std::uint8_t>(p.italic());
+                u = static_cast<std::uint8_t>(p.underline());
+                s = static_cast<std::uint8_t>(p.strikethrough());
+
+                if(fg_code != _fg_colors[fg]) {
+                    buffer += _fg_colors[fg];
+                    fg_code = _fg_colors[fg];
                 }
 
-                if(bg_code != _bg_colors[static_cast<std::uint8_t>(p.bg)]) {
-                    buffer += _bg_colors[static_cast<std::uint8_t>(p.bg)];
-                    bg_code = _bg_colors[static_cast<std::uint8_t>(p.bg)];
+                if(bg_code != _bg_colors[bg]) {
+                    buffer += _bg_colors[bg];
+                    bg_code = _bg_colors[bg];
                 }
 
-                buffer += p.display;
+                if(pos_ne != _pos_ne[pn]) {
+                    buffer += _pos_ne[pn];
+                    pos_ne = _pos_ne[pn];
+                }
+
+                if(bold != _bold[b]) {
+                    buffer += _bold[b];
+                    bold = _bold[b];
+                }
+
+                if(italic != _italic[i]) {
+                    buffer += _italic[i];
+                    italic = _italic[i];
+                }
+
+                if(underline != _underline[u]) {
+                    buffer += _underline[u];
+                    underline = _underline[u];
+                }
+
+                if(strikethrough != _strikethrough[s]) {
+                    buffer += _strikethrough[s];
+                    strikethrough = _strikethrough[s];
+                }
+
+                buffer += p.displayed();
             }
         }
 
         std::cout << seq::BUFFER_POSITION << buffer;
 
-        fg_code = bg_code = nullptr;
+        fg_code = bg_code = pos_ne = bold = italic = underline = strikethrough = nullptr;
     }
 }
 
@@ -351,27 +480,43 @@ console::Pixel & console::grid::at_2D(std::vector<Pixel> & pixels, std::size_t x
 
 std::size_t console::grid::at_2D(std::size_t x, std::size_t y, std::size_t X) noexcept { return y * X + x; }
 
-void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str, col::FG fg, col::BG bg, std::size_t x, std::size_t y, std::size_t X) {
-    set_string(pixels, str, fg, bg, at_2D(x, y, X));
+void console::grid::set_string(
+    std::vector<Pixel> & pixels, std::string_view str, col::FG fg, col::BG bg,
+    col::INVERT inv, col::BOLD b, col::ITALIC i, col::UNDERLINE u, col::STRIKETHROUGH s,
+    std::size_t x, std::size_t y, std::size_t X
+) {
+    set_string(pixels, str, fg, bg, inv, b, i, u, s, at_2D(x, y, X));
 }
 
-void console::grid::set_string(std::vector<Pixel> & pixels, std::string_view str, col::FG fg, col::BG bg, std::size_t pos) {
+void console::grid::set_string(
+    std::vector<Pixel> & pixels, std::string_view str, col::FG fg, col::BG bg,
+    col::INVERT inv, col::BOLD b, col::ITALIC _i, col::UNDERLINE u, col::STRIKETHROUGH s,
+    std::size_t pos
+) {
     static std::size_t i;
     if(str.size() > pixels.size() - pos)
         for(i = 0; i != pixels.size() - pos; ++i) {
-            pixels[pos + i].display = str[i];
-            if(bg != col::BG::DONT_REPLACE)
-                pixels[pos + i].bg = bg;
-            if(fg != col::FG::DONT_REPLACE)
-                pixels[pos + i].fg = fg;
+            pixels[pos + i].displayed(str[i]);
+
+            if(bg != col::BG::DONT_REPLACE           ) pixels[pos + i].bg(bg           ) ;
+            if(fg != col::FG::DONT_REPLACE           ) pixels[pos + i].fg(fg           ) ;
+            if(inv != col::INVERT::DONT_REPLACE      ) pixels[pos + i].inverted(inv    ) ;
+            if(b != col::BOLD::DONT_REPLACE          ) pixels[pos + i].bold(b          ) ;
+            if(_i != col::ITALIC::DONT_REPLACE       ) pixels[pos + i].italic(_i       ) ;
+            if(u != col::UNDERLINE::DONT_REPLACE     ) pixels[pos + i].underline(u     ) ;
+            if(s != col::STRIKETHROUGH::DONT_REPLACE ) pixels[pos + i].strikethrough(s ) ;
         }
     else
         for(i = 0; i != str.size(); ++i) {
-            pixels[pos + i].display = str[i];
-            if(bg != col::BG::DONT_REPLACE)
-                pixels[pos + i].bg = bg;
-            if(fg != col::FG::DONT_REPLACE)
-                pixels[pos + i].fg = fg;
+            pixels[pos + i].displayed(str[i]);
+
+            if(bg != col::BG::DONT_REPLACE           ) pixels[pos + i].bg(bg           ) ;
+            if(fg != col::FG::DONT_REPLACE           ) pixels[pos + i].fg(fg           ) ;
+            if(inv != col::INVERT::DONT_REPLACE      ) pixels[pos + i].inverted(inv    ) ;
+            if(b != col::BOLD::DONT_REPLACE          ) pixels[pos + i].bold(b          ) ;
+            if(_i != col::ITALIC::DONT_REPLACE       ) pixels[pos + i].italic(_i       ) ;
+            if(u != col::UNDERLINE::DONT_REPLACE     ) pixels[pos + i].underline(u     ) ;
+            if(s != col::STRIKETHROUGH::DONT_REPLACE ) pixels[pos + i].strikethrough(s ) ;
         }
 }
 
