@@ -199,7 +199,7 @@ void console::_impl::_updateinputs() {
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
         _consoleX = w.ws_col;
-        _consoleY = w.ws_row - 1;
+        _consoleY = w.ws_row;
 
         tv.tv_sec  = 10;
         tv.tv_usec = 0;
@@ -257,14 +257,14 @@ void console::_impl::_draw() {
         if(dFps >= 1.0F / 30.0F) {
 #ifdef _WIN32
             title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
-            " - X: "           + std::to_string(_consoleX - 1)                               +
+            " - X: "           + std::to_string(_consoleX)                                   +
             " Y: "             + std::to_string(_consoleY)                                   +
             " - KEY: "         + std::to_string(_current_key)                                +
             " - MOUSE: X: "    + std::to_string(_mouseX)                                     +
             " Y: "             + std::to_string(_mouseY);
 #elif defined(__unix__)
             title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
-            " - X: "           + std::to_string(_consoleX - 1)                               +
+            " - X: "           + std::to_string(_consoleX)                                   +
             " Y: "             + std::to_string(_consoleY)                                   +
             " - KEY: "         + std::to_string(_current_key);
 #endif
