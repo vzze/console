@@ -3,7 +3,7 @@ Small 2D Graphics Engine that runs as a CLI, goal was to keep it small and pack 
 
 ### Celullar Automaton
 
-<img src="https://raw.githubusercontent.com/vzze/console-engine/main/cellular_automaton.png">
+<img src="https://raw.githubusercontent.com/vzze/console-engine/main/cellular_automaton.gif">
 
 ### String support
 
