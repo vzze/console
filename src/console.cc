@@ -90,41 +90,36 @@ void console::Pixel::strikethrough(col::STRIKETHROUGH _s) noexcept {
 }
 
 #ifdef _WIN32
-HANDLE console::_impl::_hOut;
-HANDLE console::_impl::_hIn;
-
-DWORD console::_impl::_oldhOut;
-DWORD console::_impl::_oldhIn;
+HANDLE                  console::_impl::_hOut;
+HANDLE                  console::_impl::_hIn;
+DWORD                   console::_impl::_oldhOut;
+DWORD                   console::_impl::_oldhIn;
 #endif
-std::atomic_bool console::_impl::_failed_exit = false;
-std::atomic_bool console::_impl::_draw_title = true;
-
-std::atomic_size_t console::_impl::_consoleX = 0;
-std::atomic_size_t console::_impl::_consoleY = 0;
+std::atomic_bool        console::_impl::_failed_exit = false;
+std::atomic_bool        console::_impl::_draw_title  = true;
+std::atomic_size_t      console::_impl::_consoleX    = 0;
+std::atomic_size_t      console::_impl::_consoleY    = 0;
 #ifdef _WIN32
-std::atomic_size_t console::_impl::_mouseX = 0;
-std::atomic_size_t console::_impl::_mouseY = 0;
+std::atomic_size_t      console::_impl::_mouseX  = 0;
+std::atomic_size_t      console::_impl::_mouseY  = 0;
+std::atomic_bool        console::_impl::_focus_c = true;
 #endif
-std::atomic_char console::_impl::_current_key = 0;
-
+std::atomic_char        console::_impl::_current_key = 0;
 console::_impl::_buffer console::_impl::_pbuf;
 
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float)>
-console::_impl::_update_callback = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float) -> bool {
-    return true;
-};
+console::_impl::_update_callback = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float) -> bool { return true; };
 
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t)>
-console::_impl::_init_callback = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool {
-    return true;
-};
+console::_impl::_init_callback = [](std::vector<console::Pixel> &, std::size_t, std::size_t) -> bool { return true; };
 
+std::function<void(std::size_t, std::size_t)> console::_impl::_resize_callback = [](std::size_t, std::size_t) -> void {};
 std::function<void(char)> console::_impl::_key_callback = [](char) -> void {};
 #ifdef _WIN32
 bool console::_impl::_mouse_pressed_buttons[5] = { false };
-
 std::function<void(const bool[5], std::size_t, std::size_t)>
 console::_impl::_mouse_callback = [](const bool *, std::size_t, std::size_t) -> void {};
+std::function<void(bool)> console::_impl::_focus_callback = [](bool) -> void {};
 
 BOOL console::_impl::_ctrlhandler(DWORD ctrltype) {
     switch(ctrltype) {
@@ -194,14 +189,22 @@ void console::_impl::_updateinputs() {
                 case WINDOW_BUFFER_SIZE_EVENT:
                     _consoleX = static_cast<std::size_t>(buf[i].Event.WindowBufferSizeEvent.dwSize.X);
                     _consoleY = static_cast<std::size_t>(buf[i].Event.WindowBufferSizeEvent.dwSize.Y);
+                    _resize_callback(_consoleX, _consoleY);
+                break;
+                case FOCUS_EVENT:
+                    _focus_c = buf[i].Event.FocusEvent.bSetFocus;
+                    _focus_callback(_focus_c);
                 break;
             }
         delete[] buf;
 #elif defined(__unix__)
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
-        _consoleX = w.ws_col;
-        _consoleY = w.ws_row;
+        if(_consoleX != w.ws_col || _consoleY != w.ws_row) {
+            _consoleX = w.ws_col;
+            _consoleY = w.ws_row;
+            _resize_callback(_consoleX, _consoleY);
+        }
 
         tv.tv_sec  = 10;
         tv.tv_usec = 0;
@@ -258,6 +261,7 @@ void console::_impl::_draw() {
         if(dFps >= 1.0F / 30.0F) {
 #ifdef _WIN32
             title = "V - FPS " + std::to_string((1.0F / dFps) * static_cast<float>(counter)) +
+            " - "              + std::to_string(_focus_c)                                    +
             " - X: "           + std::to_string(_consoleX)                                   +
             " Y: "             + std::to_string(_consoleY)                                   +
             " - KEY: "         + std::to_string(_current_key)                                +
@@ -375,21 +379,13 @@ std::int32_t console::init() {
     return 1;
 }
 #ifdef _WIN32
-void console::set_mouse_callback(std::function<void(const bool *, std::size_t, std::size_t)> f) {
-    _impl::_mouse_callback = f;
-}
+void console::set_mouse_callback (std::function<void(const bool *, std::size_t, std::size_t)> f) { _impl::_mouse_callback = f; }
+void console::set_focus_callback (std::function<void(bool)> f) { _impl::_focus_callback = f; }
 #endif
-void console::set_key_callback(std::function<void(char)> f) {
-    _impl::_key_callback = f;
-}
-
-void console::set_update_callback(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t, double)> f) {
-    _impl::_update_callback = f;
-}
-
-void console::set_init_callback(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t)> f) {
-    _impl::_init_callback = f;
-}
+void console::set_resize_callback(std::function<void(std::size_t, std::size_t)> f) { _impl::_resize_callback = f; }
+void console::set_key_callback   (std::function<void(char)> f) { _impl::_key_callback = f; }
+void console::set_update_callback(std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t, double)> f) { _impl::_update_callback = f; }
+void console::set_init_callback  (std::function<bool(std::vector<console::Pixel>&,std::size_t,std::size_t)> f) { _impl::_init_callback = f; }
 
 void console::run() {
     std::vector<Pixel> pixels = {};

@@ -89,51 +89,31 @@ namespace console {
         // swaps fg and bg colors;
         // default NO;
         // DONT_REPLACE should only be used with set_string;
-        enum class INVERT : std::uint8_t {
-            YES = 0,
-            NO  = 1,
-            DONT_REPLACE = 2
-        };
+        enum class INVERT : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
 
         // set of values used to create Pixels representing the 16 ansi colors;
         // bold will turn pixel fg/bg into the "bright" version;
         // default NO;
         // DONT_REPLACE should only be used with set_string;
-        enum class BOLD : std::uint8_t {
-            YES = 0,
-            NO  = 1,
-            DONT_REPLACE = 2
-        };
+        enum class BOLD : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
 
         // set of values used to create Pixels representing the 16 ansi colors;
         // text will be either italic or not;
         // default NO;
         // DONT_REPLACE should only be used with set_string;
-        enum class ITALIC : std::uint8_t {
-            YES = 0,
-            NO  = 1,
-            DONT_REPLACE = 2
-        };
+        enum class ITALIC : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
 
         // set of values used to create Pixels representing the 16 ansi colors;
         // text will be either underlined or not;
         // default NO;
         // DONT_REPLACE should only be used with set_string;
-        enum class UNDERLINE : std::uint8_t {
-            YES = 0,
-            NO  = 1,
-            DONT_REPLACE = 2
-        };
+        enum class UNDERLINE : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
 
         // set of values used to create Pixels representing the 16 ansi colors;
         // text will be either strikethrough or not;
         // default NO;
         // DONT_REPLACE should only be used with set_string;
-        enum class STRIKETHROUGH : std::uint8_t {
-            YES = 0,
-            NO  = 1,
-            DONT_REPLACE = 2
-        };
+        enum class STRIKETHROUGH : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
 
         // set of values used to create Pixels representing the 16 ansi colors;
         // DONT_REPLACE should only be used with set_string;
@@ -303,40 +283,37 @@ namespace console {
 #ifdef _WIN32
         extern HANDLE _hOut;
         extern HANDLE _hIn;
-
         extern DWORD _oldhOut;
         extern DWORD _oldhIn;
 #endif
         extern std::atomic_bool _failed_exit;
         extern std::atomic_bool _draw_title;
-
         extern std::atomic_size_t _consoleX;
         extern std::atomic_size_t _consoleY;
 #ifdef _WIN32
         extern std::atomic_size_t _mouseX;
         extern std::atomic_size_t _mouseY;
+        extern std::atomic_bool _focus_c;
 #endif
         extern std::atomic_char _current_key;
-
         struct _buffer {
             std::vector<Pixel> _next, _current;
             std::mutex _mut_read;
             std::mutex _mut_write;
         };
-
         extern _buffer _pbuf;
-
         extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, float)> _update_callback;
         extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> _init_callback;
         extern std::function<void(char)> _key_callback;
+        extern std::function<void(std::size_t, std::size_t)> _resize_callback;
 #ifdef _WIN32
         extern bool _mouse_pressed_buttons[5];
         extern std::function<void(const bool *, std::size_t, std::size_t)> _mouse_callback;
+        extern std::function<void(bool)> _focus_callback;
 
         BOOL _ctrlhandler(DWORD ctrltype);
 #endif
         void _updateinputs();
-
         void _draw();
     }
 
@@ -344,11 +321,11 @@ namespace console {
     std::int32_t init();
 #ifdef _WIN32
     void set_mouse_callback(std::function<void(const bool[5], std::size_t, std::size_t)>);
+    void set_focus_callback(std::function<void(bool)>);
 #endif
+    void set_resize_callback(std::function<void(std::size_t, std::size_t)>);
     void set_key_callback(std::function<void(char)>);
-
     void set_update_callback(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, double)>);
-
     void set_init_callback(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)>);
 
     void run();
