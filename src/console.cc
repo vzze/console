@@ -107,6 +107,14 @@ std::atomic_bool        console::_impl::_focus_c = true;
 std::atomic_char        console::_impl::_current_key = 0;
 console::_impl::_buffer console::_impl::_pbuf;
 
+std::atomic<console::col::FG>            console::_impl::_title_fg  = console::col::FG::WHITE;
+std::atomic<console::col::BG>            console::_impl::_title_bg  = console::col::BG::DONT_REPLACE;
+std::atomic<console::col::INVERT>        console::_impl::_title_inv = console::col::INVERT::DONT_REPLACE;
+std::atomic<console::col::BOLD>          console::_impl::_title_b   = console::col::BOLD::DONT_REPLACE;
+std::atomic<console::col::ITALIC>        console::_impl::_title_i   = console::col::ITALIC::DONT_REPLACE;
+std::atomic<console::col::UNDERLINE>     console::_impl::_title_u   = console::col::UNDERLINE::DONT_REPLACE;
+std::atomic<console::col::STRIKETHROUGH> console::_impl::_title_s   = console::col::STRIKETHROUGH::DONT_REPLACE;
+
 std::function<bool(std::vector<console::Pixel> &, std::size_t, std::size_t, float)>
 console::_impl::_update_callback = [](std::vector<console::Pixel> &, std::size_t, std::size_t, float) -> bool { return true; };
 
@@ -287,9 +295,9 @@ void console::_impl::_draw() {
 
             if(_draw_title)
                 grid::set_string(
-                    _pbuf._current, title, col::FG::RED, col::BG::DONT_REPLACE,
-                    col::INVERT::DONT_REPLACE, col::BOLD::DONT_REPLACE, col::ITALIC::DONT_REPLACE,
-                    col::UNDERLINE::DONT_REPLACE, col::STRIKETHROUGH::DONT_REPLACE, 0
+                    _pbuf._current, title, _title_fg, _title_bg,
+                    _title_inv, _title_b, _title_i,
+                    _title_u, _title_s, 0
                 );
 
             for(auto & p : _pbuf._current) {
@@ -459,6 +467,19 @@ void console::toggle_title() {
 
 bool console::title_state() {
     return _impl::_draw_title;
+}
+
+void console::set_title_options(
+    col::FG fg, col::BG bg, col::INVERT inv, col::BOLD b,
+    col::ITALIC i, col::UNDERLINE u, col::STRIKETHROUGH s
+) {
+    _impl::_title_fg = fg;
+    _impl::_title_bg = bg;
+    _impl::_title_inv = inv;
+    _impl::_title_b = b;
+    _impl::_title_i = i;
+    _impl::_title_u = u;
+    _impl::_title_s = s;
 }
 
 std::int32_t console::exit() {

@@ -48,6 +48,8 @@ constexpr double tickrate = 1.0 / 5.0;
 double accumulator = 0.0;
 
 bool Init(std::vector<console::Pixel> & pixels, std::size_t X, std::size_t Y) {
+    console::set_title_options(console::col::FG::CYAN);
+
     console::grid::for_each_0(pixels, X, Y, [](console::Pixel & p) {
         p = console::Pixel(console::col::FG::BLACK, console::col::BG::BLACK);
     });

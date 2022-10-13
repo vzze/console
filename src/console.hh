@@ -147,6 +147,13 @@ namespace console {
             std::mutex _mut_write;
         };
         extern _buffer _pbuf;
+        extern std::atomic<col::FG>            _title_fg;
+        extern std::atomic<col::BG>            _title_bg;
+        extern std::atomic<col::INVERT>        _title_inv;
+        extern std::atomic<col::BOLD>          _title_b;
+        extern std::atomic<col::ITALIC>        _title_i;
+        extern std::atomic<col::UNDERLINE>     _title_u;
+        extern std::atomic<col::STRIKETHROUGH> _title_s;
         extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, float)> _update_callback;
         extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> _init_callback;
         extern std::function<void(char)> _key_callback;
@@ -180,6 +187,12 @@ namespace console {
 
     /* false if not being drawn true otherwise; */
     bool title_state();
+
+    void set_title_options(
+        col::FG = col::FG::WHITE, col::BG = col::BG::DONT_REPLACE, col::INVERT = col::INVERT::DONT_REPLACE,
+        col::BOLD = col::BOLD::DONT_REPLACE, col::ITALIC = col::ITALIC::DONT_REPLACE,
+        col::UNDERLINE = col::UNDERLINE::DONT_REPLACE, col::STRIKETHROUGH = col::STRIKETHROUGH::DONT_REPLACE
+    );
 
     /* returns zero if successful; */
     std::int32_t exit();
