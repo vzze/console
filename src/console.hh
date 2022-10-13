@@ -18,72 +18,6 @@
 #endif
 
 namespace console {
-    namespace seq {
-        inline constexpr char const * const ESC                   = "\x1b";
-        inline constexpr char const * const CSI                   = "\x1b[";
-
-        inline constexpr char const * const FG_BLACK              = "\x1b[30m";
-        inline constexpr char const * const FG_RED                = "\x1b[31m";
-        inline constexpr char const * const FG_GREEN              = "\x1b[32m";
-        inline constexpr char const * const FG_YELLOW             = "\x1b[33m";
-        inline constexpr char const * const FG_BLUE               = "\x1b[34m";
-        inline constexpr char const * const FG_MAGENTA            = "\x1b[35m";
-        inline constexpr char const * const FG_CYAN               = "\x1b[36m";
-        inline constexpr char const * const FG_WHITE              = "\x1b[37m";
-
-        inline constexpr char const * const FG_BRIGHT_BLACK       = "\x1b[90m";
-        inline constexpr char const * const FG_BRIGHT_RED         = "\x1b[91m";
-        inline constexpr char const * const FG_BRIGHT_GREEN       = "\x1b[92m";
-        inline constexpr char const * const FG_BRIGHT_YELLOW      = "\x1b[93m";
-        inline constexpr char const * const FG_BRIGHT_BLUE        = "\x1b[94m";
-        inline constexpr char const * const FG_BRIGHT_MAGENTA     = "\x1b[95m";
-        inline constexpr char const * const FG_BRIGHT_CYAN        = "\x1b[96m";
-        inline constexpr char const * const FG_BRIGHT_WHITE       = "\x1b[97m";
-
-        inline constexpr char const * const FG_DEFAULT            = "\x1b[39m";
-
-        inline constexpr char const * const BG_BLACK              = "\x1b[40m";
-        inline constexpr char const * const BG_RED                = "\x1b[41m";
-        inline constexpr char const * const BG_GREEN              = "\x1b[42m";
-        inline constexpr char const * const BG_YELLOW             = "\x1b[43m";
-        inline constexpr char const * const BG_BLUE               = "\x1b[44m";
-        inline constexpr char const * const BG_MAGENTA            = "\x1b[45m";
-        inline constexpr char const * const BG_CYAN               = "\x1b[46m";
-        inline constexpr char const * const BG_WHITE              = "\x1b[47m";
-
-        inline constexpr char const * const BG_BRIGHT_BLACK       = "\x1b[100m";
-        inline constexpr char const * const BG_BRIGHT_RED         = "\x1b[101m";
-        inline constexpr char const * const BG_BRIGHT_GREEN       = "\x1b[102m";
-        inline constexpr char const * const BG_BRIGHT_YELLOW      = "\x1b[103m";
-        inline constexpr char const * const BG_BRIGHT_BLUE        = "\x1b[104m";
-        inline constexpr char const * const BG_BRIGHT_MAGENTA     = "\x1b[105m";
-        inline constexpr char const * const BG_BRIGHT_CYAN        = "\x1b[106m";
-        inline constexpr char const * const BG_BRIGHT_WHITE       = "\x1b[107m";
-
-        inline constexpr char const * const BG_DEFAULT            = "\x1b[49m";
-
-        inline constexpr char const * const POSITIVE              = "\x1b[27m";
-        inline constexpr char const * const NEGATIVE              = "\x1b[7m";
-
-        inline constexpr char const * const ALTERNATE_BUFFER      = "\x1b[?1049h";
-        inline constexpr char const * const MAIN_BUFFER           = "\x1b[?1049l";
-
-        inline constexpr char const * const HIDE_CURSOR           = "\x1b[?25l";
-        inline constexpr char const * const BUFFER_POSITION       = "\x1b[1;1f";
-        inline constexpr char const * const SHOW_CURSOR           = "\x1b[?25h";
-        inline constexpr char const * const SOFT_RESET            = "\x1b[!p";
-
-        inline constexpr char const * const TEXT_BOLD             = "\x1b[1m";
-        inline constexpr char const * const TEXT_ITALIC           = "\x1b[3m";
-        inline constexpr char const * const TEXT_UNDERLINE        = "\x1b[4m";
-        inline constexpr char const * const TEXT_STRIKETHROUGH    = "\x1b[9m";
-
-        inline constexpr char const * const TEXT_NO_BOLD          = "\x1b[22m";
-        inline constexpr char const * const TEXT_NO_ITALIC        = "\x1b[23m";
-        inline constexpr char const * const TEXT_NO_UNDERLINE     = "\x1b[24m";
-        inline constexpr char const * const TEXT_NO_STRIKETHROUGH = "\x1b[29m";
-    }
-
     namespace col {
         // set of values used to create Pixels representing the 16 ansi colors;
         // swaps fg and bg colors;
@@ -118,54 +52,29 @@ namespace console {
         // set of values used to create Pixels representing the 16 ansi colors;
         // DONT_REPLACE should only be used with set_string;
         enum class FG : std::uint8_t {
-            BLACK          = 0,
-            RED            = 1,
-            GREEN          = 2,
-            YELLOW         = 3,
-            BLUE           = 4,
-            MAGENTA        = 5,
-            CYAN           = 6,
-            WHITE          = 7,
-
-            BRIGHT_BLACK   = 8,
-            BRIGHT_RED     = 9,
-            BRIGHT_GREEN   = 10,
-            BRIGHT_YELLOW  = 11,
-            BRIGHT_BLUE    = 12,
-            BRIGHT_MAGENTA = 13,
-            BRIGHT_CYAN    = 14,
-            BRIGHT_WHITE   = 15,
-
-            DEFAULT        = 16,
-
-            DONT_REPLACE   = 17
+            BLACK          = 0,  RED            = 1,
+            GREEN          = 2,  YELLOW         = 3,
+            BLUE           = 4,  MAGENTA        = 5,
+            CYAN           = 6,  WHITE          = 7,
+            BRIGHT_BLACK   = 8,  BRIGHT_RED     = 9,
+            BRIGHT_GREEN   = 10, BRIGHT_YELLOW  = 11,
+            BRIGHT_BLUE    = 12, BRIGHT_MAGENTA = 13,
+            BRIGHT_CYAN    = 14, BRIGHT_WHITE   = 15,
+            DEFAULT        = 16, DONT_REPLACE   = 17
         };
 
         // set of values used to create Pixels representing the 16 ansi colors;
         // DONT_REPLACE should only be used with set_string;
         enum class BG : std::uint8_t {
-            BLACK          = 0,
-            RED            = 1,
-            GREEN          = 2,
-            YELLOW         = 3,
-            BLUE           = 4,
-            MAGENTA        = 5,
-            CYAN           = 6,
-            WHITE          = 7,
-
-
-            BRIGHT_BLACK   = 8,
-            BRIGHT_RED     = 9,
-            BRIGHT_GREEN   = 10,
-            BRIGHT_YELLOW  = 11,
-            BRIGHT_BLUE    = 12,
-            BRIGHT_MAGENTA = 13,
-            BRIGHT_CYAN    = 14,
-            BRIGHT_WHITE   = 15,
-
-            DEFAULT        = 16,
-
-            DONT_REPLACE   = 17
+            BLACK          = 0,  RED            = 1,
+            GREEN          = 2,  YELLOW         = 3,
+            BLUE           = 4,  MAGENTA        = 5,
+            CYAN           = 6,  WHITE          = 7,
+            BRIGHT_BLACK   = 8,  BRIGHT_RED     = 9,
+            BRIGHT_GREEN   = 10, BRIGHT_YELLOW  = 11,
+            BRIGHT_BLUE    = 12, BRIGHT_MAGENTA = 13,
+            BRIGHT_CYAN    = 14, BRIGHT_WHITE   = 15,
+            DEFAULT        = 16, DONT_REPLACE   = 17
         };
     }
 
@@ -181,13 +90,13 @@ namespace console {
             char display;
         public:
             Pixel(
-                col::FG = col::FG::BLACK,
-                col::BG = col::BG::BLACK,
-                char = ' ',
-                col::INVERT = col::INVERT::NO,
-                col::BOLD = col::BOLD::NO,
-                col::ITALIC = col::ITALIC::NO,
-                col::UNDERLINE = col::UNDERLINE::NO,
+                col::FG            = col::FG::BLACK,
+                col::BG            = col::BG::BLACK,
+                char               = ' ',
+                col::INVERT        = col::INVERT::NO,
+                col::BOLD          = col::BOLD::NO,
+                col::ITALIC        = col::ITALIC::NO,
+                col::UNDERLINE     = col::UNDERLINE::NO,
                 col::STRIKETHROUGH = col::STRIKETHROUGH::NO
             ) noexcept;
             /* getter; */
@@ -211,75 +120,6 @@ namespace console {
     };
 
     namespace _impl {
-        inline constexpr char const * const _fg_colors[] = {
-            seq::FG_BLACK,
-            seq::FG_RED,
-            seq::FG_GREEN,
-            seq::FG_YELLOW,
-            seq::FG_BLUE,
-            seq::FG_MAGENTA,
-            seq::FG_CYAN,
-            seq::FG_WHITE,
-
-            seq::FG_BRIGHT_BLACK,
-            seq::FG_BRIGHT_RED,
-            seq::FG_BRIGHT_GREEN,
-            seq::FG_BRIGHT_YELLOW,
-            seq::FG_BRIGHT_BLUE,
-            seq::FG_BRIGHT_MAGENTA,
-            seq::FG_BRIGHT_CYAN,
-            seq::FG_BRIGHT_WHITE,
-
-            seq::FG_DEFAULT
-        };
-
-        inline constexpr char const * const _bg_colors[] = {
-            seq::BG_BLACK,
-            seq::BG_RED,
-            seq::BG_GREEN,
-            seq::BG_YELLOW,
-            seq::BG_BLUE,
-            seq::BG_MAGENTA,
-            seq::BG_CYAN,
-            seq::BG_WHITE,
-
-            seq::BG_BRIGHT_BLACK,
-            seq::BG_BRIGHT_RED,
-            seq::BG_BRIGHT_GREEN,
-            seq::BG_BRIGHT_YELLOW,
-            seq::BG_BRIGHT_BLUE,
-            seq::BG_BRIGHT_MAGENTA,
-            seq::BG_BRIGHT_CYAN,
-            seq::BG_BRIGHT_WHITE,
-
-            seq::BG_DEFAULT
-        };
-
-        inline constexpr char const * const _pos_ne[] = {
-            seq::NEGATIVE,
-            seq::POSITIVE
-        };
-
-        inline constexpr char const * const _bold[] = {
-            seq::TEXT_BOLD,
-            seq::TEXT_NO_BOLD,
-        };
-
-        inline constexpr char const * const _italic[] = {
-            seq::TEXT_ITALIC,
-            seq::TEXT_NO_ITALIC,
-        };
-
-        inline constexpr char const * const _underline[] = {
-            seq::TEXT_UNDERLINE,
-            seq::TEXT_NO_UNDERLINE,
-        };
-
-
-        inline constexpr char const * const _strikethrough[] = {
-            seq::TEXT_STRIKETHROUGH,
-            seq::TEXT_NO_STRIKETHROUGH,
-        };
 #ifdef _WIN32
         extern HANDLE _hOut;
         extern HANDLE _hIn;
@@ -387,5 +227,143 @@ namespace console {
         // parameters: pixel buffer, number of columns (X), number of lines (Y), function with side effect;
         // 270 degree for_each applied on a pixel buffer;
         void for_each_270(std::vector<Pixel> &, std::size_t, std::size_t, std::function<void(Pixel &)>);
+    }
+
+    namespace seq {
+        inline constexpr char const * const ESC                   = "\x1b";
+        inline constexpr char const * const CSI                   = "\x1b[";
+
+        inline constexpr char const * const FG_BLACK              = "\x1b[30m";
+        inline constexpr char const * const FG_RED                = "\x1b[31m";
+        inline constexpr char const * const FG_GREEN              = "\x1b[32m";
+        inline constexpr char const * const FG_YELLOW             = "\x1b[33m";
+        inline constexpr char const * const FG_BLUE               = "\x1b[34m";
+        inline constexpr char const * const FG_MAGENTA            = "\x1b[35m";
+        inline constexpr char const * const FG_CYAN               = "\x1b[36m";
+        inline constexpr char const * const FG_WHITE              = "\x1b[37m";
+
+        inline constexpr char const * const FG_BRIGHT_BLACK       = "\x1b[90m";
+        inline constexpr char const * const FG_BRIGHT_RED         = "\x1b[91m";
+        inline constexpr char const * const FG_BRIGHT_GREEN       = "\x1b[92m";
+        inline constexpr char const * const FG_BRIGHT_YELLOW      = "\x1b[93m";
+        inline constexpr char const * const FG_BRIGHT_BLUE        = "\x1b[94m";
+        inline constexpr char const * const FG_BRIGHT_MAGENTA     = "\x1b[95m";
+        inline constexpr char const * const FG_BRIGHT_CYAN        = "\x1b[96m";
+        inline constexpr char const * const FG_BRIGHT_WHITE       = "\x1b[97m";
+
+        inline constexpr char const * const FG_DEFAULT            = "\x1b[39m";
+
+        inline constexpr char const * const BG_BLACK              = "\x1b[40m";
+        inline constexpr char const * const BG_RED                = "\x1b[41m";
+        inline constexpr char const * const BG_GREEN              = "\x1b[42m";
+        inline constexpr char const * const BG_YELLOW             = "\x1b[43m";
+        inline constexpr char const * const BG_BLUE               = "\x1b[44m";
+        inline constexpr char const * const BG_MAGENTA            = "\x1b[45m";
+        inline constexpr char const * const BG_CYAN               = "\x1b[46m";
+        inline constexpr char const * const BG_WHITE              = "\x1b[47m";
+
+        inline constexpr char const * const BG_BRIGHT_BLACK       = "\x1b[100m";
+        inline constexpr char const * const BG_BRIGHT_RED         = "\x1b[101m";
+        inline constexpr char const * const BG_BRIGHT_GREEN       = "\x1b[102m";
+        inline constexpr char const * const BG_BRIGHT_YELLOW      = "\x1b[103m";
+        inline constexpr char const * const BG_BRIGHT_BLUE        = "\x1b[104m";
+        inline constexpr char const * const BG_BRIGHT_MAGENTA     = "\x1b[105m";
+        inline constexpr char const * const BG_BRIGHT_CYAN        = "\x1b[106m";
+        inline constexpr char const * const BG_BRIGHT_WHITE       = "\x1b[107m";
+
+        inline constexpr char const * const BG_DEFAULT            = "\x1b[49m";
+
+        inline constexpr char const * const POSITIVE              = "\x1b[27m";
+        inline constexpr char const * const NEGATIVE              = "\x1b[7m";
+
+        inline constexpr char const * const ALTERNATE_BUFFER      = "\x1b[?1049h";
+        inline constexpr char const * const MAIN_BUFFER           = "\x1b[?1049l";
+
+        inline constexpr char const * const HIDE_CURSOR           = "\x1b[?25l";
+        inline constexpr char const * const BUFFER_POSITION       = "\x1b[1;1f";
+        inline constexpr char const * const SHOW_CURSOR           = "\x1b[?25h";
+        inline constexpr char const * const SOFT_RESET            = "\x1b[!p";
+
+        inline constexpr char const * const TEXT_BOLD             = "\x1b[1m";
+        inline constexpr char const * const TEXT_ITALIC           = "\x1b[3m";
+        inline constexpr char const * const TEXT_UNDERLINE        = "\x1b[4m";
+        inline constexpr char const * const TEXT_STRIKETHROUGH    = "\x1b[9m";
+
+        inline constexpr char const * const TEXT_NO_BOLD          = "\x1b[22m";
+        inline constexpr char const * const TEXT_NO_ITALIC        = "\x1b[23m";
+        inline constexpr char const * const TEXT_NO_UNDERLINE     = "\x1b[24m";
+        inline constexpr char const * const TEXT_NO_STRIKETHROUGH = "\x1b[29m";
+    }
+
+    namespace _impl {
+        inline constexpr char const * const _fg_colors[] = {
+            seq::FG_BLACK,
+            seq::FG_RED,
+            seq::FG_GREEN,
+            seq::FG_YELLOW,
+            seq::FG_BLUE,
+            seq::FG_MAGENTA,
+            seq::FG_CYAN,
+            seq::FG_WHITE,
+
+            seq::FG_BRIGHT_BLACK,
+            seq::FG_BRIGHT_RED,
+            seq::FG_BRIGHT_GREEN,
+            seq::FG_BRIGHT_YELLOW,
+            seq::FG_BRIGHT_BLUE,
+            seq::FG_BRIGHT_MAGENTA,
+            seq::FG_BRIGHT_CYAN,
+            seq::FG_BRIGHT_WHITE,
+
+            seq::FG_DEFAULT
+        };
+
+        inline constexpr char const * const _bg_colors[] = {
+            seq::BG_BLACK,
+            seq::BG_RED,
+            seq::BG_GREEN,
+            seq::BG_YELLOW,
+            seq::BG_BLUE,
+            seq::BG_MAGENTA,
+            seq::BG_CYAN,
+            seq::BG_WHITE,
+
+            seq::BG_BRIGHT_BLACK,
+            seq::BG_BRIGHT_RED,
+            seq::BG_BRIGHT_GREEN,
+            seq::BG_BRIGHT_YELLOW,
+            seq::BG_BRIGHT_BLUE,
+            seq::BG_BRIGHT_MAGENTA,
+            seq::BG_BRIGHT_CYAN,
+            seq::BG_BRIGHT_WHITE,
+
+            seq::BG_DEFAULT
+        };
+
+        inline constexpr char const * const _pos_ne[] = {
+            seq::NEGATIVE,
+            seq::POSITIVE
+        };
+
+        inline constexpr char const * const _bold[] = {
+            seq::TEXT_BOLD,
+            seq::TEXT_NO_BOLD,
+        };
+
+        inline constexpr char const * const _italic[] = {
+            seq::TEXT_ITALIC,
+            seq::TEXT_NO_ITALIC,
+        };
+
+        inline constexpr char const * const _underline[] = {
+            seq::TEXT_UNDERLINE,
+            seq::TEXT_NO_UNDERLINE,
+        };
+
+
+        inline constexpr char const * const _strikethrough[] = {
+            seq::TEXT_STRIKETHROUGH,
+            seq::TEXT_NO_STRIKETHROUGH,
+        };
     }
 }
