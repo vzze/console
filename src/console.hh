@@ -1,4 +1,9 @@
-#pragma once
+#ifndef CONSOLE_HH
+#define CONSOLE_HH
+
+#if __cplusplus < 201703L
+#error "Minimum Standard is C++17"
+#endif
 
 #include <atomic>
 #include <vector>
@@ -367,3 +372,5 @@ namespace console {
         };
     }
 }
+
+#endif
