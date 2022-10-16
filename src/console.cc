@@ -160,7 +160,7 @@ void console::_impl::_updateinputs() {
 
     tcgetattr(fileno(stdin), &oldsets);
 
-    newsets.c_lflag &= (~ICANON & ~ECHO);
+    newsets.c_lflag &= static_cast<unsigned>(~ICANON & ~ECHO);
 
     tcsetattr(fileno(stdin), TCSANOW, &newsets);
 #endif
