@@ -1,4 +1,4 @@
-#include "console.hh"
+#include <console.hh>
 
 console::Pixel::Pixel(
     col::FG _fg,
@@ -443,7 +443,7 @@ void console::run() {
         {
             std::scoped_lock lck(_impl::_pbuf._mut_write);
             for(auto & p : pixels) {
-                _impl::_pbuf._next[static_cast<std::size_t>(&p - pixels.begin().base())] = p;
+                _impl::_pbuf._next[static_cast<std::size_t>(&p - &*pixels.begin())] = p;
             }
         }
 
