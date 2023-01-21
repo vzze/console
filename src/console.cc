@@ -166,7 +166,7 @@ void console::_impl::_updateinputs() {
 #endif
     while(true) {
         if(_failed_exit) [[unlikely]]
-            return;
+            break;
 #ifdef _WIN32
         GetNumberOfConsoleInputEvents(_hIn, &read);
         buf = new INPUT_RECORD[read];
@@ -258,7 +258,7 @@ void console::_impl::_draw() {
 
     while(true) {
         if(_failed_exit) [[unlikely]]
-            return;
+            break;
 
         t1 = std::chrono::high_resolution_clock::now();
         fps = t1 - t2;
