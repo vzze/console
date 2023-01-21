@@ -1,4 +1,4 @@
-#include "../src/console.hh"
+#include <console.hh>
 
 void ResizeCallback([[maybe_unused]] std::size_t X, [[maybe_unused]] std::size_t Y) {
     // gets called only if X or Y are modified

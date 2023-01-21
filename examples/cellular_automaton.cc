@@ -1,4 +1,4 @@
-#include "../src/console.hh"
+#include <console.hh>
 
 void celullar_automata(std::vector<console::Pixel> & pixels, std::size_t & X, std::size_t & Y) {
     static std::vector<std::pair<std::size_t, std::size_t>> to_die;
