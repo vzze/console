@@ -1,17 +1,12 @@
-# Console Engine
-Small 2D Graphics Engine that runs as a CLI, goal was to keep it small and pack it with as many features as possible.
+### Cross-platform wrapper for the terminal API
 
-### Celullar Automaton
+### Dependencies
+* A C++ compiler with `c++20` support (`gcc 13.1.1`, `clang 16.0.6`, `msvc 19.36.32535` or later versions)
+* `cmake` 3.9 or later
 
-<img src="https://raw.githubusercontent.com/vzze/console-engine/main/images/cellular_automaton.gif">
+### Supported platforms
+* `win32`
+* `unix`
 
-### Text support
-
-<img src="https://raw.githubusercontent.com/vzze/console-engine/main/images/string_test.png">
-
-#### Perks
-* Full Text Support
-* Multithreaded
-* Rendering is separated from the main thread
-* Small source
-* CTRL + PAUSE will cause the application to gracefully exit
+### Building
+For each supported platform there exists a `configure` and `build` script, run them in this order.

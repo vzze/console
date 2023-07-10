@@ -1,19 +1,17 @@
 #ifndef CONSOLE_HH
 #define CONSOLE_HH
 
-#if __cplusplus < 201703L
-#error "Minimum Standard is C++17"
-#endif
-
-#include <atomic>
+#include <string_view>
+#include <functional>
+#include <iostream>
+#include <utility>
+#include <cstdint>
 #include <vector>
 #include <string>
-#include <mutex>
-#include <functional>
-#include <chrono>
 #include <thread>
-#include <bitset>
-#include <iostream>
+#include <chrono>
+#include <format>
+#include <array>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -22,368 +20,177 @@
 #include <termios.h>
 #endif
 
-namespace console {
-    namespace col {
-        // set of values used to create Pixels representing the 16 ansi colors;
-        // swaps fg and bg colors;
-        // default NO;
-        // DONT_REPLACE should only be used with set_string;
-        enum class INVERT : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
+struct console {
+    public:
+        struct coord {
+            std::uint32_t column, row;
 
-        // set of values used to create Pixels representing the 16 ansi colors;
-        // bold will turn pixel fg/bg into the "bright" version;
-        // default NO;
-        // DONT_REPLACE should only be used with set_string;
-        enum class BOLD : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
+            friend auto operator <=> (const coord &, const coord &) = default;
+        };
+    private:
+        template<typename Key, typename Value, std::size_t Size>
+        struct map {
+            std::array<std::pair<Key, Value>, Size> data;
 
-        // set of values used to create Pixels representing the 16 ansi colors;
-        // text will be either italic or not;
-        // default NO;
-        // DONT_REPLACE should only be used with set_string;
-        enum class ITALIC : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
+            consteval Value operator [] (const Key & key) const {
+                const auto itr = std::ranges::find_if(data, [&](const auto & value) {
+                    return value.first == key;
+                });
 
-        // set of values used to create Pixels representing the 16 ansi colors;
-        // text will be either underlined or not;
-        // default NO;
-        // DONT_REPLACE should only be used with set_string;
-        enum class UNDERLINE : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
+                if(itr == data.end()) {
+                    throw std::logic_error{"Key does not exist."};
+                }
 
-        // set of values used to create Pixels representing the 16 ansi colors;
-        // text will be either strikethrough or not;
-        // default NO;
-        // DONT_REPLACE should only be used with set_string;
-        enum class STRIKETHROUGH : std::uint8_t { YES = 0, NO = 1, DONT_REPLACE = 2 };
-
-        // set of values used to create Pixels representing the 16 ansi colors;
-        // DONT_REPLACE should only be used with set_string;
-        enum class FG : std::uint8_t {
-            BLACK          = 0,  RED            = 1,
-            GREEN          = 2,  YELLOW         = 3,
-            BLUE           = 4,  MAGENTA        = 5,
-            CYAN           = 6,  WHITE          = 7,
-            BRIGHT_BLACK   = 8,  BRIGHT_RED     = 9,
-            BRIGHT_GREEN   = 10, BRIGHT_YELLOW  = 11,
-            BRIGHT_BLUE    = 12, BRIGHT_MAGENTA = 13,
-            BRIGHT_CYAN    = 14, BRIGHT_WHITE   = 15,
-            DEFAULT        = 16, DONT_REPLACE   = 17
+                return itr->second;
+            }
         };
 
-        // set of values used to create Pixels representing the 16 ansi colors;
-        // DONT_REPLACE should only be used with set_string;
-        enum class BG : std::uint8_t {
-            BLACK          = 0,  RED            = 1,
-            GREEN          = 2,  YELLOW         = 3,
-            BLUE           = 4,  MAGENTA        = 5,
-            CYAN           = 6,  WHITE          = 7,
-            BRIGHT_BLACK   = 8,  BRIGHT_RED     = 9,
-            BRIGHT_GREEN   = 10, BRIGHT_YELLOW  = 11,
-            BRIGHT_BLUE    = 12, BRIGHT_MAGENTA = 13,
-            BRIGHT_CYAN    = 14, BRIGHT_WHITE   = 15,
-            DEFAULT        = 16, DONT_REPLACE   = 17
-        };
-    }
+        bool should_exit;
 
-    struct Pixel {
-        private:
-            //            INVERTED
-            //  FG   BG   | I S
-            //  v    v    v v v
-            // 0100001000010101
-            //             ^ ^
-            //             B U
-            std::bitset<16> values;
-            char display;
-        public:
-            Pixel(
-                col::FG            = col::FG::BLACK,
-                col::BG            = col::BG::BLACK,
-                char               = ' ',
-                col::INVERT        = col::INVERT::NO,
-                col::BOLD          = col::BOLD::NO,
-                col::ITALIC        = col::ITALIC::NO,
-                col::UNDERLINE     = col::UNDERLINE::NO,
-                col::STRIKETHROUGH = col::STRIKETHROUGH::NO
-            ) noexcept;
-            /* getter; */
-            col::FG            fg()            const noexcept;
-            col::BG            bg()            const noexcept;
-            char               displayed()     const noexcept;
-            col::INVERT        inverted()      const noexcept;
-            col::BOLD          bold()          const noexcept;
-            col::ITALIC        italic()        const noexcept;
-            col::UNDERLINE     underline()     const noexcept;
-            col::STRIKETHROUGH strikethrough() const noexcept;
-            /* setter; */
-            void fg(col::FG)                       noexcept;
-            void bg(col::BG)                       noexcept;
-            void displayed(char)                   noexcept;
-            void inverted(col::INVERT)             noexcept;
-            void bold(col::BOLD)                   noexcept;
-            void italic(col::ITALIC)               noexcept;
-            void underline(col::UNDERLINE)         noexcept;
-            void strikethrough(col::STRIKETHROUGH) noexcept;
-    };
+        std::string buffer;
 
-    namespace _impl {
+        void process_events() noexcept;
+
+        std::vector<std::function<bool(const char)>> key_callbacks;
+        std::vector<std::function<bool(const coord)>> resize_callbacks;
 #ifdef _WIN32
-        extern HANDLE _hOut;
-        extern HANDLE _hIn;
-        extern DWORD _oldhOut;
-        extern DWORD _oldhIn;
+        HANDLE in_handle;
+        HANDLE out_handle;
+
+        DWORD old_in_mode;
+        DWORD old_out_mode;
+#elif defined(__unix__)
+        struct termios old_sets;
 #endif
-        extern std::atomic_bool _failed_exit;
-        extern std::atomic_bool _draw_title;
-        extern std::atomic_size_t _consoleX;
-        extern std::atomic_size_t _consoleY;
-#ifdef _WIN32
-        extern std::atomic_size_t _mouseX;
-        extern std::atomic_size_t _mouseY;
-        extern std::atomic_bool _focus_c;
-#endif
-        extern std::atomic_char _current_key;
-        struct _buffer {
-            std::vector<Pixel> _next, _current;
-            std::mutex _mut_read;
-            std::mutex _mut_write;
-        };
-        extern _buffer _pbuf;
-        extern std::atomic<col::FG>            _title_fg;
-        extern std::atomic<col::BG>            _title_bg;
-        extern std::atomic<col::INVERT>        _title_inv;
-        extern std::atomic<col::BOLD>          _title_b;
-        extern std::atomic<col::ITALIC>        _title_i;
-        extern std::atomic<col::UNDERLINE>     _title_u;
-        extern std::atomic<col::STRIKETHROUGH> _title_s;
-        extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, float)> _update_callback;
-        extern std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)> _init_callback;
-        extern std::function<void(char)> _key_callback;
-        extern std::function<void(std::size_t, std::size_t)> _resize_callback;
-#ifdef _WIN32
-        extern bool _mouse_pressed_buttons[5];
-        extern std::function<void(const bool *, std::size_t, std::size_t)> _mouse_callback;
-        extern std::function<void(bool)> _focus_callback;
+    public:
+        static constexpr map<std::string_view, std::string_view, 17> FG{{{ // NOLINT(readability-identifier-length)
+            { "BLACK"  , "\x1b[30m" },
+            { "RED"    , "\x1b[31m" },
+            { "GREEN"  , "\x1b[32m" },
+            { "YELLOW" , "\x1b[33m" },
+            { "BLUE"   , "\x1b[34m" },
+            { "MAGENTA", "\x1b[35m" },
+            { "CYAN"   , "\x1b[36m" },
+            { "WHITE"  , "\x1b[37m" },
 
-        BOOL _ctrlhandler(DWORD ctrltype);
-#endif
-        void _updateinputs();
-        void _draw();
-    }
+            { "BRIGHT_BLACK"  , "\x1b[90m" },
+            { "BRIGHT_RED"    , "\x1b[91m" },
+            { "BRIGHT_GREEN"  , "\x1b[92m" },
+            { "BRIGHT_YELLOW" , "\x1b[93m" },
+            { "BRIGHT_BLUE"   , "\x1b[94m" },
+            { "BRIGHT_MAGENTA", "\x1b[95m" },
+            { "BRIGHT_CYAN"   , "\x1b[96m" },
+            { "BRIGHT_WHITE"  , "\x1b[97m" },
 
-    /* returns nonzero value if successful; */
-    std::int32_t init();
-#ifdef _WIN32
-    void set_mouse_callback(std::function<void(const bool[5], std::size_t, std::size_t)>);
-    void set_focus_callback(std::function<void(bool)>);
-#endif
-    void set_resize_callback(std::function<void(std::size_t, std::size_t)>);
-    void set_key_callback(std::function<void(char)>);
-    void set_update_callback(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t, double)>);
-    void set_init_callback(std::function<bool(std::vector<Pixel> &, std::size_t, std::size_t)>);
+            { "DEFAULT", "\x1b[39m" }
+        }}};
 
-    void run();
+        static constexpr map<std::string_view, std::string_view, 17> BG{{{ // NOLINT(readability-identifier-length)
+            { "BLACK"  , "\x1b[40m" },
+            { "RED"    , "\x1b[41m" },
+            { "GREEN"  , "\x1b[42m" },
+            { "YELLOW" , "\x1b[43m" },
+            { "BLUE"   , "\x1b[44m" },
+            { "MAGENTA", "\x1b[45m" },
+            { "CYAN"   , "\x1b[46m" },
+            { "WHITE"  , "\x1b[47m" },
 
-    /* toggles inbetween drawing or not drawing the title; */
-    void toggle_title();
+            { "BRIGHT_BLACK"  , "\x1b[100m" },
+            { "BRIGHT_RED"    , "\x1b[101m" },
+            { "BRIGHT_GREEN"  , "\x1b[102m" },
+            { "BRIGHT_YELLOW" , "\x1b[103m" },
+            { "BRIGHT_BLUE"   , "\x1b[104m" },
+            { "BRIGHT_MAGENTA", "\x1b[105m" },
+            { "BRIGHT_CYAN"   , "\x1b[106m" },
+            { "BRIGHT_WHITE"  , "\x1b[107m" },
 
-    /* false if not being drawn true otherwise; */
-    bool title_state();
+            { "DEFAULT", "\x1b[49m" }
+        }}};
 
-    void set_title_options(
-        col::FG = col::FG::WHITE, col::BG = col::BG::DONT_REPLACE, col::INVERT = col::INVERT::DONT_REPLACE,
-        col::BOLD = col::BOLD::DONT_REPLACE, col::ITALIC = col::ITALIC::DONT_REPLACE,
-        col::UNDERLINE = col::UNDERLINE::DONT_REPLACE, col::STRIKETHROUGH = col::STRIKETHROUGH::DONT_REPLACE
-    );
+        static constexpr map<std::string_view, char, 11> DEC{{{
+            /* ┘ */ { "br", 'j' },
+            /* ┐ */ { "tr", 'k' },
+            /* ┌ */ { "tl", 'l' },
+            /* └ */ { "bl", 'm' },
+            /* ┼ */ { "cr", 'n' },
+            /* ─ */ { "ho", 'q' },
+            /* │ */ { "ve", 'x' },
+            /* ├ */ { "t1", 't' },
+            /* ┤ */ { "t2", 'u' },
+            /* ┴ */ { "t3", 'v' },
+            /* ┬ */ { "t4", 'w' },
+        }}};
 
-    /* returns zero if successful; */
-    std::int32_t exit();
+        console() noexcept;
 
-    // collection of utility functions to interact with the pixel buffer
-    namespace grid {
-        // parameters: pixel buffer, x coord, y coord, number of columns (X);
-        // throws if out of bounds;
-        // returns Pixel reference;
-        Pixel & at_2D(std::vector<Pixel> &, std::size_t, std::size_t, std::size_t);
+        console(const console &) = default;
+        console(console &&) = default;
 
-        // parameters: x coord, y coord, number of columns (X);
-        // converts to coords to vector position: pixels[at_2D(12, 12, X)];
-        std::size_t at_2D(std::size_t, std::size_t, std::size_t) noexcept;
+        console & operator = (const console &) = default;
+        console & operator = (console &&) = default;
 
-        // parameters: pixel buffer, string, x coord, y coord, fg,
-        // bg, number of columns (X);
-        // throws if out of bounds;
-        // if string is larger than remaining space in vector its cut;
-        // using escape sequences like \n or \t WILL break the pixel buffer;
-        void set_string(
-            std::vector<Pixel> &, std::string_view, col::FG fg, col::BG bg,
-            col::INVERT, col::BOLD, col::ITALIC, col::UNDERLINE, col::STRIKETHROUGH,
-            std::size_t, std::size_t, std::size_t
-        );
+        template<typename Writable>
+        void write(Writable && writable) {
+            try {
+                if constexpr(requires{ buffer + writable; })
+                    buffer += writable;
+                else
+                    buffer += std::format("{}", std::forward<Writable>(writable));
+            } catch(...) { should_exit = true; }
+        }
 
-        // parameters: pixel buffer, string, fg,
-        // bg, vector position;
-        // throws if out of bounds;
-        // if string is larger than remaining space in vector its cut;
-        // using escape sequences like \n or \t WILL break the pixel buffer;
-        void set_string(
-            std::vector<Pixel> &, std::string_view, col::FG fg, col::BG bg,
-            col::INVERT, col::BOLD, col::ITALIC, col::UNDERLINE, col::STRIKETHROUGH,
-            std::size_t
-        );
+        template<typename Callable>
+        void add_key_callback(Callable && callable) noexcept {
+            try {
+                key_callbacks.emplace_back(std::forward<Callable>(callable));
+            } catch(...) { should_exit = true; }
+        }
 
-        // parameters: pixel buffer, number of columns (X), number of lines (Y), function with side effect;
-        // 0 degree for_each applied on a pixel buffer;
-        void for_each_0(std::vector<Pixel> &, std::size_t, std::size_t, std::function<void(Pixel &)>);
+        template<typename Callable>
+        void add_resize_callback(Callable && callable) noexcept {
+            try {
+                resize_callbacks.emplace_back(std::forward<Callable>(callable));
+            } catch(...) { should_exit = true; }
+        }
 
-        // parameters: pixel buffer, number of columns (X), number of lines (Y), function with side effect;
-        // 90 degree for_each applied on a pixel buffer;
-        void for_each_90(std::vector<Pixel> &, std::size_t, std::size_t, std::function<void(Pixel &)>);
+        bool refresh() noexcept;
 
-        // parameters: pixel buffer, number of columns (X), number of lines (Y), function with side effect;
-        // 180 degree for_each applied on a pixel buffer;
-        void for_each_180(std::vector<Pixel> &, std::size_t, std::size_t, std::function<void(Pixel &)>);
+        void main_loop() noexcept;
 
-        // parameters: pixel buffer, number of columns (X), number of lines (Y), function with side effect;
-        // 270 degree for_each applied on a pixel buffer;
-        void for_each_270(std::vector<Pixel> &, std::size_t, std::size_t, std::function<void(Pixel &)>);
-    }
+        void set_cursor_pos(const coord);
 
-    namespace seq {
-        inline constexpr char const * const ESC                   = "\x1b";
-        inline constexpr char const * const CSI                   = "\x1b[";
+        template<typename Writable>
+        void print_at_pos(const coord coords, Writable && writable) {
+            set_cursor_pos(coords);
+            write(std::forward<Writable>(writable));
+        }
 
-        inline constexpr char const * const FG_BLACK              = "\x1b[30m";
-        inline constexpr char const * const FG_RED                = "\x1b[31m";
-        inline constexpr char const * const FG_GREEN              = "\x1b[32m";
-        inline constexpr char const * const FG_YELLOW             = "\x1b[33m";
-        inline constexpr char const * const FG_BLUE               = "\x1b[34m";
-        inline constexpr char const * const FG_MAGENTA            = "\x1b[35m";
-        inline constexpr char const * const FG_CYAN               = "\x1b[36m";
-        inline constexpr char const * const FG_WHITE              = "\x1b[37m";
+        void insert_char(const std::uint32_t);
+        void delete_char(const std::uint32_t);
+        void erase_char(const std::uint32_t);
+        void insert_line(const std::uint32_t);
+        void delete_line(const std::uint32_t);
 
-        inline constexpr char const * const FG_BRIGHT_BLACK       = "\x1b[90m";
-        inline constexpr char const * const FG_BRIGHT_RED         = "\x1b[91m";
-        inline constexpr char const * const FG_BRIGHT_GREEN       = "\x1b[92m";
-        inline constexpr char const * const FG_BRIGHT_YELLOW      = "\x1b[93m";
-        inline constexpr char const * const FG_BRIGHT_BLUE        = "\x1b[94m";
-        inline constexpr char const * const FG_BRIGHT_MAGENTA     = "\x1b[95m";
-        inline constexpr char const * const FG_BRIGHT_CYAN        = "\x1b[96m";
-        inline constexpr char const * const FG_BRIGHT_WHITE       = "\x1b[97m";
+        void dec_mode();
+        void ascii_mode();
 
-        inline constexpr char const * const FG_DEFAULT            = "\x1b[39m";
-
-        inline constexpr char const * const BG_BLACK              = "\x1b[40m";
-        inline constexpr char const * const BG_RED                = "\x1b[41m";
-        inline constexpr char const * const BG_GREEN              = "\x1b[42m";
-        inline constexpr char const * const BG_YELLOW             = "\x1b[43m";
-        inline constexpr char const * const BG_BLUE               = "\x1b[44m";
-        inline constexpr char const * const BG_MAGENTA            = "\x1b[45m";
-        inline constexpr char const * const BG_CYAN               = "\x1b[46m";
-        inline constexpr char const * const BG_WHITE              = "\x1b[47m";
-
-        inline constexpr char const * const BG_BRIGHT_BLACK       = "\x1b[100m";
-        inline constexpr char const * const BG_BRIGHT_RED         = "\x1b[101m";
-        inline constexpr char const * const BG_BRIGHT_GREEN       = "\x1b[102m";
-        inline constexpr char const * const BG_BRIGHT_YELLOW      = "\x1b[103m";
-        inline constexpr char const * const BG_BRIGHT_BLUE        = "\x1b[104m";
-        inline constexpr char const * const BG_BRIGHT_MAGENTA     = "\x1b[105m";
-        inline constexpr char const * const BG_BRIGHT_CYAN        = "\x1b[106m";
-        inline constexpr char const * const BG_BRIGHT_WHITE       = "\x1b[107m";
-
-        inline constexpr char const * const BG_DEFAULT            = "\x1b[49m";
-
-        inline constexpr char const * const POSITIVE              = "\x1b[27m";
-        inline constexpr char const * const NEGATIVE              = "\x1b[7m";
-
-        inline constexpr char const * const ALTERNATE_BUFFER      = "\x1b[?1049h";
-        inline constexpr char const * const MAIN_BUFFER           = "\x1b[?1049l";
-
-        inline constexpr char const * const HIDE_CURSOR           = "\x1b[?25l";
-        inline constexpr char const * const BUFFER_POSITION       = "\x1b[1;1f";
-        inline constexpr char const * const SHOW_CURSOR           = "\x1b[?25h";
-        inline constexpr char const * const SOFT_RESET            = "\x1b[!p";
-
-        inline constexpr char const * const TEXT_BOLD             = "\x1b[1m";
-        inline constexpr char const * const TEXT_ITALIC           = "\x1b[3m";
-        inline constexpr char const * const TEXT_UNDERLINE        = "\x1b[4m";
-        inline constexpr char const * const TEXT_STRIKETHROUGH    = "\x1b[9m";
-
-        inline constexpr char const * const TEXT_NO_BOLD          = "\x1b[22m";
-        inline constexpr char const * const TEXT_NO_ITALIC        = "\x1b[23m";
-        inline constexpr char const * const TEXT_NO_UNDERLINE     = "\x1b[24m";
-        inline constexpr char const * const TEXT_NO_STRIKETHROUGH = "\x1b[29m";
-    }
-
-    namespace _impl {
-        inline constexpr char const * const _fg_colors[] = {
-            seq::FG_BLACK,
-            seq::FG_RED,
-            seq::FG_GREEN,
-            seq::FG_YELLOW,
-            seq::FG_BLUE,
-            seq::FG_MAGENTA,
-            seq::FG_CYAN,
-            seq::FG_WHITE,
-
-            seq::FG_BRIGHT_BLACK,
-            seq::FG_BRIGHT_RED,
-            seq::FG_BRIGHT_GREEN,
-            seq::FG_BRIGHT_YELLOW,
-            seq::FG_BRIGHT_BLUE,
-            seq::FG_BRIGHT_MAGENTA,
-            seq::FG_BRIGHT_CYAN,
-            seq::FG_BRIGHT_WHITE,
-
-            seq::FG_DEFAULT
+        enum class DISPLAY : std::uint32_t {
+            CURSOR_TO_EOD  = 0,
+            BEG_TO_CURSOR  = 1,
+            ENTIRE_DISPLAY = 2,
         };
 
-        inline constexpr char const * const _bg_colors[] = {
-            seq::BG_BLACK,
-            seq::BG_RED,
-            seq::BG_GREEN,
-            seq::BG_YELLOW,
-            seq::BG_BLUE,
-            seq::BG_MAGENTA,
-            seq::BG_CYAN,
-            seq::BG_WHITE,
+        void erase_in_display(const DISPLAY);
 
-            seq::BG_BRIGHT_BLACK,
-            seq::BG_BRIGHT_RED,
-            seq::BG_BRIGHT_GREEN,
-            seq::BG_BRIGHT_YELLOW,
-            seq::BG_BRIGHT_BLUE,
-            seq::BG_BRIGHT_MAGENTA,
-            seq::BG_BRIGHT_CYAN,
-            seq::BG_BRIGHT_WHITE,
-
-            seq::BG_DEFAULT
+        enum class LINE : std::uint32_t {
+            CURSOR_TO_EOL = 0,
+            BEG_TO_CURSOR = 1,
+            ENTIRE_LINE   = 2
         };
 
-        inline constexpr char const * const _pos_ne[] = {
-            seq::NEGATIVE,
-            seq::POSITIVE
-        };
+        void erase_in_line(const LINE);
 
-        inline constexpr char const * const _bold[] = {
-            seq::TEXT_BOLD,
-            seq::TEXT_NO_BOLD,
-        };
-
-        inline constexpr char const * const _italic[] = {
-            seq::TEXT_ITALIC,
-            seq::TEXT_NO_ITALIC,
-        };
-
-        inline constexpr char const * const _underline[] = {
-            seq::TEXT_UNDERLINE,
-            seq::TEXT_NO_UNDERLINE,
-        };
-
-
-        inline constexpr char const * const _strikethrough[] = {
-            seq::TEXT_STRIKETHROUGH,
-            seq::TEXT_NO_STRIKETHROUGH,
-        };
-    }
-}
+        ~console() noexcept;
+};
 
 #endif

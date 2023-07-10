@@ -1,0 +1,29 @@
+---
+Checks: >
+  *,
+  -abseil-*,
+  -altera-*,
+  -android-*,
+  -fuchsia-*,
+  -google-*,
+  -llvm*,
+  -modernize-use-trailing-return-type,
+  -zircon-*,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -readability-avoid-const-params-in-decls,
+  -readability-braces-around-statements,
+  -readability-else-after-return,
+  -readability-static-accessed-through-instance,
+  -hicpp-braces-around-statements,
+  -misc-non-private-member-variables-in-classes
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
+FormatStyle: none
+
+CheckOptions:
+  - key: readability-identifier-length.IgnoredVariableNames
+    value: 'x|y|z'
+  - key: readability-identifier-length.IgnoredParameterNames
+    value: 'x|y|z'
+...

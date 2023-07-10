@@ -1,0 +1,19 @@
+#ifndef CMAKE_HH
+#define CMAKE_HH
+
+#include <string_view>
+
+namespace cmake::${PROJECT_NAME} {
+    inline constexpr std::string_view name        = "${PROJECT_NAME}";
+    inline constexpr std::string_view description = "${PROJECT_DESCRIPTION}";
+    inline constexpr std::string_view version     = "${PROJECT_VERSION}";
+
+    inline constexpr std::string_view ver_major   = "${PROJECT_VERSION_MAJOR}";
+    inline constexpr std::string_view ver_minor   = "${PROJECT_VERSION_MINOR}";
+    inline constexpr std::string_view ver_patch   = "${PROJECT_VERSION_PATCH}";
+
+    inline constexpr std::string_view fmt         = "${PROJECT_NAME}  Version ${PROJECT_VERSION}  Copyright (C) 2023  vzze\n\n";
+    inline constexpr std::string_view copyright   = "Copyright (C) 2023  vzze";
+}
+
+#endif

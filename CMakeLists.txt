@@ -1,18 +1,21 @@
-set(CMAKE_C_STANDARD 20)
-set(CMAKE_C_EXTENSIONS OFF)
+cmake_minimum_required(VERSION 3.9)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_EXTENSIONS OFF)
+include(cmake/ProjectOptions.cmake)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_BUILD_TYPE "RelWithDebInfo")
-
-cmake_minimum_required(VERSION 3.2)
-
-project(console-engine)
-
-include_directories(
-    include
+project(
+    console
+    VERSION 0.0.1
+    DESCRIPTION "Library for interacting with the console."
 )
 
-add_library(console src/console.cc)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+endif()
+
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set_project_options("include" "")
+
+add_subdirectory(src)
