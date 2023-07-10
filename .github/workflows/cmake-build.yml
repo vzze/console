@@ -1,7 +1,6 @@
 name: cmake-build
 
 on:
- on:
   push:
     branches: [ "main" ]
     paths:
