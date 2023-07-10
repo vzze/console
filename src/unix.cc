@@ -18,7 +18,10 @@ void console::process_events() noexcept {
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &window); // NOLINT(cppcoreguidelines-pro-type-vararg, hicpp-vararg)
 
     for(const auto & callback : resize_callbacks)
-        if(!callback({ window.ws_col, window.ws_row })) should_exit = true;
+        if(!callback({ window.ws_col, window.ws_row })) {
+            should_exit = true;
+            return;
+        }
 
     struct timeval time{0, 0};
 
@@ -34,7 +37,10 @@ void console::process_events() noexcept {
         [[maybe_unused]] const auto x = read(fileno(stdin), &key, 1);
 
         for(const auto & callback : key_callbacks)
-            if(!callback(key)) should_exit = true;
+            if(!callback(key)) {
+                should_exit = true;
+                return;
+            }
     }
 }
 

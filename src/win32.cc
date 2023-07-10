@@ -61,7 +61,10 @@ void console::process_events() noexcept {
             case KEY_EVENT:
                 if(event_buffer[i].Event.KeyEvent.bKeyDown != 0)
                     for(const auto & callback : key_callbacks)
-                        if(!callback(event_buffer[i].Event.KeyEvent.uChar.AsciiChar)) should_exit = true;
+                        if(!callback(event_buffer[i].Event.KeyEvent.uChar.AsciiChar)) {
+                            should_exit = true;
+                            return;
+                        }
             break;
 
             case WINDOW_BUFFER_SIZE_EVENT:
@@ -69,7 +72,10 @@ void console::process_events() noexcept {
                     if(!callback({
                         static_cast<std::uint32_t>(event_buffer[i].Event.WindowBufferSizeEvent.dwSize.X),
                         static_cast<std::uint32_t>(event_buffer[i].Event.WindowBufferSizeEvent.dwSize.Y)
-                    })) should_exit = true;
+                    })) {
+                        should_exit = true;
+                        return;
+                    }
             break;
         }
     // NOLINTEND(cppcoreguidelines-pro-type-union-access)

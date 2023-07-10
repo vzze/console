@@ -51,8 +51,12 @@ struct console {
 
         void process_events() noexcept;
 
+        void init_alternate_buffer() noexcept;
+        void main_buffer() noexcept;
+
         std::vector<std::function<bool(const char)>> key_callbacks;
         std::vector<std::function<bool(const coord)>> resize_callbacks;
+        std::vector<std::function<bool()>> notify_alive_callbacks;
 #ifdef _WIN32
         HANDLE in_handle;
         HANDLE out_handle;
@@ -153,8 +157,16 @@ struct console {
             } catch(...) { should_exit = true; }
         }
 
+        template<typename Callable>
+        void add_notify_alive_callback(Callable && callable) noexcept {
+            try {
+                notify_alive_callbacks.emplace_back(std::forward<Callable>(callable));
+            } catch(...) { should_exit = true; }
+        }
+
         bool refresh() noexcept;
 
+        void main_loop(const std::chrono::milliseconds) noexcept;
         void main_loop() noexcept;
 
         void set_cursor_pos(const coord);
