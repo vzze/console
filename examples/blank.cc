@@ -13,5 +13,7 @@ bool resize([[maybe_unused]] const console::coord coords) {
 }
 
 int main() {
+    instance.add_key_callback(key);
+    instance.add_resize_callback(resize);
     instance.main_loop();
 }
