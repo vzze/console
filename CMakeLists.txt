@@ -19,4 +19,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set_project_options("include" "")
 
 add_subdirectory(src)
-add_subdirectory(examples)
+
+if(DEFINED CONSOLE_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
