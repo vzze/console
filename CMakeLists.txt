@@ -4,7 +4,7 @@ include(cmake/ProjectOptions.cmake)
 
 project(
     console
-    VERSION 0.0.3
+    VERSION 0.0.4
     DESCRIPTION "Library for interacting with the console."
 )
 
