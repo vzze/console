@@ -2,14 +2,14 @@
 
 bool console::refresh() noexcept {
     try {
-        std::cout << buffer << std::flush;
+        std::cout << buffer;
         buffer.clear();
         return true;
     } catch(...) { return false; }
 }
 
 void console::init_alternate_buffer() noexcept {
-    std::ios_base::sync_with_stdio(false);
+    std::cout.setf(std::ios::unitbuf);
 
     write("\x1b[?1049h");
     write("\x1b[?25l");
